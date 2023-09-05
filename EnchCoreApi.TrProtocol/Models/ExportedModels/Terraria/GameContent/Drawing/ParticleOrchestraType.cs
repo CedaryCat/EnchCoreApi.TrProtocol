@@ -1,7 +1,7 @@
 ﻿using EnchCoreApi.TrProtocol.Attributes;
 
 namespace Terraria.GameContent.Drawing;
-[TypeForward]
+[TypeMigrationTarget]
 public enum ParticleOrchestraType : byte {
     Keybrand,
     FlameWaders,

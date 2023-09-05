@@ -2,7 +2,7 @@
 
 namespace Terraria.GameContent.UI.WiresUI.Settings;
 
-[TypeForward]
+[TypeMigrationTarget]
 [Flags]
 public enum MultiToolMode {
     Red = 1,

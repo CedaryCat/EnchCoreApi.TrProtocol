@@ -1,7 +1,7 @@
 ﻿using EnchCoreApi.TrProtocol.Attributes;
 
 namespace Terraria.GameContent.Ambience;
-[TypeForward]
+[TypeMigrationTarget]
 public enum SkyEntityType : byte {
     BirdsV,
     Wyvern,

@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework;
 
 namespace Terraria.GameContent.Drawing;
-[TypeForward]
+[TypeMigrationTarget]
 public struct ParticleOrchestraSettings {
     public Vector2 PositionInWorld;
 

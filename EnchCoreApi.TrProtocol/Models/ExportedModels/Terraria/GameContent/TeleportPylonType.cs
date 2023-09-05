@@ -1,7 +1,7 @@
 ﻿using EnchCoreApi.TrProtocol.Attributes;
 
 namespace Terraria.GameContent;
-[TypeForward]
+[TypeMigrationTarget]
 public enum TeleportPylonType : byte {
     SurfacePurity,
     Jungle,

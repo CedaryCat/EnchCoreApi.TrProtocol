@@ -1,7 +1,7 @@
 ﻿using EnchCoreApi.TrProtocol.Attributes;
 
 namespace Terraria;
-[TypeForward]
+[TypeMigrationTarget]
 public enum PlayerSpawnContext {
     ReviveFromDeath,
     SpawningIntoWorld,

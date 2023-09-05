@@ -2,11 +2,11 @@
 
 namespace Microsoft.Xna.Framework {
 
-    [TypeForward]
+    [TypeMigrationTarget]
     public interface IPackedVector<TPacked> : IPackedVector {
         TPacked PackedValue { get; set; }
     }
-    [TypeForward]
+    [TypeMigrationTarget]
     public interface IPackedVector {
         Vector4 ToVector4();
 

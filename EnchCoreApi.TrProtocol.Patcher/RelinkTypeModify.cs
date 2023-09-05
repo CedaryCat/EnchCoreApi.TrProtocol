@@ -16,7 +16,7 @@ namespace EnchCoreApi.TrProtocol.Patcher {
 
         public override void Run(Logger logger) {
 
-            foreach (var type in modelsAssembly.GetExportedTypes().Where(t => System.Reflection.CustomAttributeExtensions.GetCustomAttribute<TypeForwardAttribute>(t) is not null)) {
+            foreach (var type in modelsAssembly.GetExportedTypes().Where(t => System.Reflection.CustomAttributeExtensions.GetCustomAttribute<TypeMigrationTargetAttribute>(t) is not null)) {
                 var origiType = destination.MainModule.Types.FirstOrDefault(t => t.FullName == type.FullName);
                 if (origiType != null) {
 

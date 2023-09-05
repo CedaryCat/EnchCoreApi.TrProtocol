@@ -10,7 +10,7 @@ namespace Microsoft.Xna.Framework {
         public byte B;
     }
     [Serializable]
-    [TypeForward]
+    [TypeMigrationTarget]
     public struct Color : IPackedVector<uint>, IPackedVector, IEquatable<Color>, ISequentialSerializableData<SequentialColor> {
         public unsafe SequentialColor SequentialData {
             get {

@@ -3,7 +3,7 @@ using EnchCoreApi.TrProtocol.Interfaces;
 using System.Globalization;
 
 namespace Microsoft.Xna.Framework {
-    [TypeForward]
+    [TypeMigrationTarget]
     public struct Vector2 : ISoildSerializableData, ISequentialSerializableData<Vector2> {
         public Vector2 SequentialData {
             get => this;

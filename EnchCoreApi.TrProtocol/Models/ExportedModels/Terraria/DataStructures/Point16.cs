@@ -3,7 +3,7 @@ using EnchCoreApi.TrProtocol.Interfaces;
 using Microsoft.Xna.Framework;
 
 namespace Terraria.DataStructures;
-[TypeForward]
+[TypeMigrationTarget]
 public struct Point16 : ISoildSerializableData {
     public readonly short X;
 

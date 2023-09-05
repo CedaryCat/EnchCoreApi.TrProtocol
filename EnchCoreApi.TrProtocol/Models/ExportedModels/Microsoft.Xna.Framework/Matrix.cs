@@ -1,7 +1,7 @@
 ﻿using EnchCoreApi.TrProtocol.Attributes;
 
 namespace Microsoft.Xna.Framework {
-    [TypeForward]
+    [TypeMigrationTarget]
     public struct Matrix {
         public float M11;
 

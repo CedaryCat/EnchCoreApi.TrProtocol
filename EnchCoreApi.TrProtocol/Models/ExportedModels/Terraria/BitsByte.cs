@@ -5,7 +5,7 @@ using EnchCoreApi.TrProtocol.Interfaces;
 
 namespace Terraria;
 
-[TypeForward]
+[TypeMigrationTarget]
 public partial struct BitsByte : ISoildSerializableData {
     private static bool Null;
 
