@@ -22,11 +22,7 @@ public static class Constants {
     private static T[] Create<T>(int count, T nonDefaultValue, params int[] indexes) {
         var result = new T[count];
         foreach (var item in indexes) {
-<<<<<<< HEAD
             result[item] = nonDefaultValue; 
-=======
-            result[item] = nonDefaultValue;
->>>>>>> parent of 7c46af6 (first commit)
         }
         return result;
     }
