@@ -4,13 +4,13 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace Microsoft.Xna.Framework {
-    [TypeForward]
-    [Serializable]
     public struct SequentialColor {
         public byte R;
         public byte G;
         public byte B;
     }
+    [Serializable]
+    [TypeForward]
     public struct Color : IPackedVector<uint>, IPackedVector, IEquatable<Color>, ISequentialSerializableData<SequentialColor> {
         public unsafe SequentialColor SequentialData {
             get {
