@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Output\**" />
+    <EmbeddedResource Remove="Output\**" />
+    <None Remove="Output\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EnchCoreApi.TrProtocol\EnchCoreApi.TrProtocol.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="OTAPI">
+      <HintPath>..\..\..\..\..\.nuget\packages\otapi.upcoming\3.1.20\lib\net6.0\OTAPI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+	  
+  <ItemGroup>
+    <PackageReference Include="ModFramework.Modules.ClearScript" Version="1.1.7" />
+    <PackageReference Include="ModFramework.Modules.CSharp" Version="1.1.7" />
+    <PackageReference Include="ModFramework.Modules.Lua" Version="1.1.7" />
+    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="22.5.1.1" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>961c907f-8a3f-4a7a-8974-47d5177cbbbd</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>EnchCoreApi.TrProtocol</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\ArraySizeAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\C2SOnlyAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\ConditionArrayAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\InitDefaultValueAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\InitNullableAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\S2COnlyAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Exceptions\ArraySerializableIndicatorLackingException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Interfaces\IExtraData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Interfaces\ISerializableData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Interfaces\ISideDependent.cs" />
+    <Compile Include="..\EnchCoreApi.TrProtocol.Shared\Attributes\ConditionGreaterThanAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\ConditionAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\ConditionEqualAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\ConditionIgnoreSerializeAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\ConditionLessThanAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\ConditionNotEqualAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\IgnoreSerializeAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\AbstractModelAttribute.cs" />
+    <Compile Include="..\EnchCoreApi.TrProtocol.Shared\Exceptions\UnsupportSubmodelTypeException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Interfaces\IAutoSerializableData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Interfaces\ISequentialSerializableData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Interfaces\ISoildSerializableData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MessageID.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\BitsByte.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NetPacket.cs" />
+  </ItemGroup>
+</Project>

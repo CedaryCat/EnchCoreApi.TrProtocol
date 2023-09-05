@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33417.168
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol", "EnchCoreApi.TrProtocol\EnchCoreApi.TrProtocol.csproj", "{098FF344-F22E-407A-9DDD-1C149DDBC495}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.Patcher", "EnchCoreApi.TrProtocol.Patcher\EnchCoreApi.TrProtocol.Patcher.csproj", "{24EC9E29-0EE4-46FF-A111-3A8A2289E879}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.SerializeCodeGenerator", "EnchCoreApi.TrProtocol.SerializeCodeGenerator\EnchCoreApi.TrProtocol.SerializeCodeGenerator.csproj", "{0B5ED186-CFA8-490B-8F1C-5D0365267FE0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SerializeTest", "SerializeTest\SerializeTest.csproj", "{FABF5887-F677-4EAB-8F17-EDA7A589BEB1}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "EnchCoreApi.TrProtocol.Shared", "EnchCoreApi.TrProtocol.Shared\EnchCoreApi.TrProtocol.Shared.shproj", "{961C907F-8A3F-4A7A-8974-47D5177CBBBD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrClient", "TrClient\TrClient.csproj", "{5B03C22E-E271-4372-AC45-219CA5D2603A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{098FF344-F22E-407A-9DDD-1C149DDBC495}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{098FF344-F22E-407A-9DDD-1C149DDBC495}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{098FF344-F22E-407A-9DDD-1C149DDBC495}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{098FF344-F22E-407A-9DDD-1C149DDBC495}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24EC9E29-0EE4-46FF-A111-3A8A2289E879}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24EC9E29-0EE4-46FF-A111-3A8A2289E879}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24EC9E29-0EE4-46FF-A111-3A8A2289E879}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24EC9E29-0EE4-46FF-A111-3A8A2289E879}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B5ED186-CFA8-490B-8F1C-5D0365267FE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B5ED186-CFA8-490B-8F1C-5D0365267FE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B5ED186-CFA8-490B-8F1C-5D0365267FE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B5ED186-CFA8-490B-8F1C-5D0365267FE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FABF5887-F677-4EAB-8F17-EDA7A589BEB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FABF5887-F677-4EAB-8F17-EDA7A589BEB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FABF5887-F677-4EAB-8F17-EDA7A589BEB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FABF5887-F677-4EAB-8F17-EDA7A589BEB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B03C22E-E271-4372-AC45-219CA5D2603A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B03C22E-E271-4372-AC45-219CA5D2603A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B03C22E-E271-4372-AC45-219CA5D2603A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B03C22E-E271-4372-AC45-219CA5D2603A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {52458C87-D6B7-4F96-BE49-30138073905C}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		EnchCoreApi.TrProtocol.Shared\EnchCoreApi.TrProtocol.Shared.projitems*{098ff344-f22e-407a-9ddd-1c149ddbc495}*SharedItemsImports = 5
+		EnchCoreApi.TrProtocol.Shared\EnchCoreApi.TrProtocol.Shared.projitems*{0b5ed186-cfa8-490b-8f1c-5d0365267fe0}*SharedItemsImports = 5
+		EnchCoreApi.TrProtocol.Shared\EnchCoreApi.TrProtocol.Shared.projitems*{961c907f-8a3f-4a7a-8974-47d5177cbbbd}*SharedItemsImports = 13
+	EndGlobalSection
+EndGlobal
