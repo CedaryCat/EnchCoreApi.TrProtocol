@@ -253,6 +253,15 @@ namespace EnchCoreApi.TrProtocol.Patcher {
                 return res;
             }
             else if (checkType is TypeSpecification tst) {
+                if (tst is GenericInstanceType gInsType) {
+                    for (int i = 0; i < gInsType.GenericArguments.Count; i++) {
+                        var check = gInsType.GenericArguments[i];
+                        if (CheckTypeShouldUpdate(ref check, newTypeRef)) {
+                            gInsType.GenericArguments[i] = check;
+                            res = true;
+                        }
+                    }
+                }
                 TypeReference tEle = tst.ElementType;
                 if (CheckTypeShouldUpdate(ref tEle, newTypeRef)) {
                     switch (checkType) {
@@ -288,20 +297,11 @@ namespace EnchCoreApi.TrProtocol.Patcher {
                                 checkType = new SentinelType(tEle);
                                 return true;
                             }
-                        case GenericInstanceType gInsType: {
-                                for (int i = 0; i < gInsType.GenericArguments.Count; i++) {
-                                    var check = gInsType.GenericArguments[i];
-                                    if (CheckTypeShouldUpdate(ref check, newTypeRef)) {
-                                        gInsType.GenericArguments[i] = check;
-                                        res = true;
-                                    }
-                                }
-                                if (CheckTypeShouldUpdate(ref tEle, newTypeRef)) {
-                                    var nGInsT = new GenericInstanceType(tEle);
-                                    nGInsT.GenericArguments.AddRange(gInsType.GenericArguments);
-                                    checkType = nGInsT;
-                                    res = true;
-                                }
+                        case GenericInstanceType: {
+                                gInsType = (GenericInstanceType)tst;
+                                var nGInsT = new GenericInstanceType(tEle);
+                                nGInsT.GenericArguments.AddRange(gInsType.GenericArguments);
+                                checkType = nGInsT;
                                 return true;
                             }
                     }
