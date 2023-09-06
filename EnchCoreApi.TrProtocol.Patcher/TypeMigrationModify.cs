@@ -6,13 +6,13 @@ using MonoMod.Utils;
 using Assembly = System.Reflection.Assembly;
 
 namespace EnchCoreApi.TrProtocol.Patcher {
-    public class RelinkTypeModify : Modify {
-        public RelinkTypeModify(AssemblyDefinition destination, Assembly assembly) : base(destination, assembly) {
+    public class TypeMigrationModify : Modify {
+        public TypeMigrationModify(AssemblyDefinition destination, Assembly assembly) : base(destination, assembly) {
             forwardeds = new List<Type>();
         }
         public IReadOnlyList<Type> Forwardeds => forwardeds;
         private readonly List<Type> forwardeds;
-        public override string Name => "Mod - Type Forward";
+        public override string Name => "Mod - Type Migration";
 
         public override void Run(Logger logger) {
 

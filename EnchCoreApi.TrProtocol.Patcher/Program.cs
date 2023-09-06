@@ -11,7 +11,7 @@ namespace EnchCoreApi.TrProtocol.Patcher {
             var otapi = AssemblyDefinition.ReadAssembly(typeof(Terraria.Main).Assembly.Location);
 
             var logger = new ConsoleLogger();
-            var forwardMod = new RelinkTypeModify(otapi, modelsAssembly);
+            var forwardMod = new TypeMigrationModify(otapi, modelsAssembly);
             var castMod = new EasyCastModify(otapi, modelsAssembly);
 
             forwardMod.Run(logger);
