@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EnchCoreApi.TrProtocol.Convertion\EnchCoreApi.TrProtocol.Convertion.csproj" />
     <ProjectReference Include="..\EnchCoreApi.TrProtocol\EnchCoreApi.TrProtocol.csproj" />
   </ItemGroup>
 	  

@@ -15,6 +15,8 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "EnchCoreApi.TrProtocol.Shar
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrClient", "TrClient\TrClient.csproj", "{5B03C22E-E271-4372-AC45-219CA5D2603A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.Convertion", "EnchCoreApi.TrProtocol.Convertion\EnchCoreApi.TrProtocol.Convertion.csproj", "{8E566F12-9BC0-4347-9042-B2741A200B27}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,10 +39,16 @@ Global
 		{FABF5887-F677-4EAB-8F17-EDA7A589BEB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FABF5887-F677-4EAB-8F17-EDA7A589BEB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FABF5887-F677-4EAB-8F17-EDA7A589BEB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{961C907F-8A3F-4A7A-8974-47D5177CBBBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{961C907F-8A3F-4A7A-8974-47D5177CBBBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B03C22E-E271-4372-AC45-219CA5D2603A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5B03C22E-E271-4372-AC45-219CA5D2603A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B03C22E-E271-4372-AC45-219CA5D2603A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B03C22E-E271-4372-AC45-219CA5D2603A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E566F12-9BC0-4347-9042-B2741A200B27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E566F12-9BC0-4347-9042-B2741A200B27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E566F12-9BC0-4347-9042-B2741A200B27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E566F12-9BC0-4347-9042-B2741A200B27}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -37,7 +37,7 @@ namespace EnchCoreApi.TrProtocol.Patcher {
                             continue;
                         }
                         foreach (var convertFrom_member in convertFrom_refleType.GetMembers()) {
-                            var att = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<ConvertionOptionAttribute>(convertFrom_member);
+                            var att = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<MemberConvertionAttribute>(convertFrom_member);
                             if (att is not null && att.Option == ConvertionOption.Copy) {
 
                                 if (convertFrom_member is System.Reflection.PropertyInfo convertFrom_refleProp) {
@@ -51,6 +51,9 @@ namespace EnchCoreApi.TrProtocol.Patcher {
                                     var convertTo_prop = convertTo_type.Properties.FirstOrDefault(p => p.Name == convertFrom_member.Name && p.GetMethod?.Body is not null && p.SetMethod?.Body is not null);
 
                                     if (convertTo_prop is not null) {
+
+
+
                                         var convertFrom_prop_typeRef = destination.MainModule.ImportReference(convertFrom_refleProp.PropertyType);
                                         var convertFrom_prop_typeDef = convertFrom_prop_typeRef.Resolve();
 
@@ -131,7 +134,9 @@ namespace EnchCoreApi.TrProtocol.Patcher {
                 }
             }
         }
-
+        //static MethodDefinition MergyMemberCastMethod(AssemblyDefinition convertion, string methodName, MethodDefinition opImplict, MethodDefinition opExplict) {
+        //    convertion.MainModule.
+        //}
 
         static void WriteMemberCopyIL(MethodDefinition opMethod, ModuleDefinition main, TypeDefinition memberTypeFrom, TypeDefinition memberTypeTo, Func<Instruction> getValue, Func<Instruction> setValue, Logger logger, LogData parentLog) {
             if (memberTypeTo.FullName == memberTypeFrom.FullName) {

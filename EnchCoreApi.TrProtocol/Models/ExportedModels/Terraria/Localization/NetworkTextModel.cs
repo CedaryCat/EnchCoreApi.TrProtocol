@@ -19,10 +19,15 @@ public partial class NetworkTextModel : ISerializableData {
 
     public static readonly NetworkTextModel Empty = FromLiteral("");
 
+    [MemberConvertion(
+        ConvertionOption.Copy, 
+        CustomConvertionFromMethod = "__covert_Array_NetworkTextModel_To_NetworkText",
+        CustomConvertionToMethod = "__covert_Array_NetworkText_To_NetworkTextModel")]
     public NetworkTextModel[] _substitutions = Array.Empty<NetworkTextModel>();
 
+    [MemberConvertion]
     public string _text;
-
+    [MemberConvertion]
     public Mode _mode;
 
     public NetworkTextModel(string text, Mode mode) {
