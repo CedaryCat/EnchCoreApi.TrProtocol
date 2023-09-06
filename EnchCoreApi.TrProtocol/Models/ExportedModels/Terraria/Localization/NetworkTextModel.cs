@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Terraria.Localization;
+[TypeConvertion("Terraria.Localization.NetworkText")]
 public partial class NetworkTextModel : ISerializableData {
     public enum Mode : byte {
         Literal,
@@ -20,9 +21,9 @@ public partial class NetworkTextModel : ISerializableData {
     public static readonly NetworkTextModel Empty = FromLiteral("");
 
     [MemberConvertion(
-        ConvertionOption.Copy, 
-        CustomConvertionFromMethod = "__covert_Array_NetworkTextModel_To_NetworkText",
-        CustomConvertionToMethod = "__covert_Array_NetworkText_To_NetworkTextModel")]
+        ConvertionOption.Custom, 
+        CustomConvertionFromMethod = "Covert_Array_NetworkTextModel_To_NetworkText",
+        CustomConvertionToMethod = "Covert_Array_NetworkText_To_NetworkTextModel")]
     public NetworkTextModel[] _substitutions = Array.Empty<NetworkTextModel>();
 
     [MemberConvertion]

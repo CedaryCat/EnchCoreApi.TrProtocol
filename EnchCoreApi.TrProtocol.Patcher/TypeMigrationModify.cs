@@ -1,7 +1,6 @@
 ﻿using EnchCoreApi.TrProtocol.Attributes;
 using EnchCoreApi.TrProtocol.Patcher.CecilTool;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using MonoMod.Utils;
 using Assembly = System.Reflection.Assembly;
 

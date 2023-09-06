@@ -1,24 +1,24 @@
 ﻿using EnchCoreApi.TrProtocol.Attributes;
 using Terraria.Localization;
 
-namespace EnchCoreApi.TrProtocol.Convertion;
+namespace Terraria.Localization; 
 public class NetworkText {
-    static NetworkText[] __covert_Array_NetworkTextModel_To_NetworkText(NetworkTextModel[] a) {
+    static NetworkText[] Covert_Array_NetworkTextModel_To_NetworkText(NetworkTextModel[] a) {
         var arr = new NetworkText[a.Length];
         for (int i = 0; i < a.Length; i++) {
-            arr[i] = op_Implicit(a[i]);
+            arr[i] = (NetworkText)a[i];
         }
         return arr;
     }
-    static NetworkTextModel[] __covert_Array_NetworkText_To_NetworkTextModel(NetworkText[] a) {
+    static NetworkTextModel[] Covert_Array_NetworkText_To_NetworkTextModel(NetworkText[] a) {
         var arr = new NetworkTextModel[a.Length];
         for (int i = 0; i < a.Length; i++) {
-            arr[i] = op_Explicit(a[i]);
+            arr[i] = (NetworkTextModel)a[i];
         }
         return arr;
     }
-    [CastOperatorPlaceHolder(CastOperator.Implicit)]
-    static extern NetworkText op_Implicit(NetworkTextModel a);
-    [CastOperatorPlaceHolder(CastOperator.Explicit)]
-    static extern NetworkTextModel op_Explicit(NetworkText a);
+    [CastOperatorPlaceHolder]
+    public static implicit operator NetworkText(NetworkTextModel a) => null;
+    [CastOperatorPlaceHolder]
+    public static explicit operator NetworkTextModel(NetworkText a) => null;
 }

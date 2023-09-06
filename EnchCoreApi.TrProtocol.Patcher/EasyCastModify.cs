@@ -1,12 +1,10 @@
 ﻿using EnchCoreApi.TrProtocol.Attributes;
 using EnchCoreApi.TrProtocol.Patcher.CecilTool;
+using Fasterflect;
+using ModFramework;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MonoMod.Utils;
 using Assembly = System.Reflection.Assembly;
 
 namespace EnchCoreApi.TrProtocol.Patcher {
@@ -28,17 +26,38 @@ namespace EnchCoreApi.TrProtocol.Patcher {
                         var convertFrom_typeRef = destination.MainModule.ImportReference(convertFrom_refleType);
                         var convertFrom_typeDef = convertFrom_typeRef.Resolve();
 
-                        var opImplict = CreateCastOperator("op_Implicit", destination.MainModule, convertFrom_typeRef, convertTo_type);
-                        if (opImplict is null) {
-                            continue;
+
+                        var opImplicit = convertTo_type.Methods.FirstOrDefault(m => m.Name == "op_Implicit" && m.CustomAttributes.Any(a => a.AttributeType.Name == nameof(CastOperatorPlaceHolderAttribute)));
+                        var opExplicit = convertTo_type.Methods.FirstOrDefault(m => m.Name == "op_Explicit" && m.CustomAttributes.Any(a => a.AttributeType.Name == nameof(CastOperatorPlaceHolderAttribute)));
+
+
+                        if (opImplicit is null) {
+                            opImplicit = CreateCastOperator("op_Implicit", destination.MainModule, convertFrom_typeRef, convertTo_type);
+                            if (opImplicit is null) {
+                                continue;
+                            }
+                            convertTo_type.Methods.Add(opImplicit);
                         }
-                        var opExplict = CreateCastOperator("op_Explicit", destination.MainModule, convertTo_type, convertFrom_typeDef);
-                        if (opExplict is null) {
-                            continue;
+                        else {
+                            opImplicit.Body = CreateCastOperatorBody(destination.MainModule, opImplicit);
+                            opImplicit.CustomAttributes.Remove(opImplicit.CustomAttributes.First(a => a.AttributeType.Name == nameof(CastOperatorPlaceHolderAttribute)));
                         }
+
+                        if (opExplicit is null) {
+                            opExplicit = CreateCastOperator("op_Explicit", destination.MainModule, convertTo_type, convertFrom_typeDef);
+                            if (opExplicit is null) {
+                                continue;
+                            }
+                            convertTo_type.Methods.Add(opExplicit);
+                        }
+                        else {
+                            opExplicit.Body = CreateCastOperatorBody(destination.MainModule, opExplicit);
+                            opExplicit.CustomAttributes.Remove(opExplicit.CustomAttributes.First(a => a.AttributeType.Name == nameof(CastOperatorPlaceHolderAttribute)));
+                        }
+
                         foreach (var convertFrom_member in convertFrom_refleType.GetMembers()) {
                             var att = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<MemberConvertionAttribute>(convertFrom_member);
-                            if (att is not null && att.Option == ConvertionOption.Copy) {
+                            if (att is not null && att.Option != ConvertionOption.Ignore) {
 
                                 if (convertFrom_member is System.Reflection.PropertyInfo convertFrom_refleProp) {
 
@@ -52,29 +71,72 @@ namespace EnchCoreApi.TrProtocol.Patcher {
 
                                     if (convertTo_prop is not null) {
 
+                                        if (att.Option == ConvertionOption.Custom) {
+                                            if (att.CustomConvertionFromMethod is null) {
+                                                logger.WriteLineError($"自定义成员转换的{nameof(att.CustomConvertionFromMethod)}为null --press key 以继续", log);
+                                                Console.ReadKey();
+                                                continue;
+                                            }
+                                            else {
+                                                var convMethod = convertTo_type.Methods.FirstOrDefault(m => m.Name == att.CustomConvertionFromMethod);
+                                                if (convMethod is null) {
+                                                    logger.WriteLineError($"自定义成员转换的{nameof(att.CustomConvertionFromMethod)}'{att.CustomConvertionFromMethod}'不存在 --press key 以继续", log);
+                                                    Console.ReadKey();
+                                                    continue;
+                                                }
+                                                else {
+                                                    opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Dup));
+                                                    opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, opImplicit.Parameters[0]));
+                                                    opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt, destination.MainModule.ImportReference(convertFrom_refleProp.GetMethod)));
+                                                    opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Call, convMethod));
+                                                    opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt, convertTo_prop.SetMethod));
+                                                }
+                                            }
+                                            if (att.CustomConvertionToMethod is null) {
+                                                logger.WriteLineError($"自定义成员转换的{nameof(att.CustomConvertionToMethod)}为null --press key 以继续", log);
+                                                Console.ReadKey();
+                                                continue;
+                                            }
+                                            else {
+                                                var convMethod = convertTo_type.Methods.FirstOrDefault(m => m.Name == att.CustomConvertionToMethod);
+                                                if (convMethod is null) {
+                                                    logger.WriteLineError($"自定义成员转换的{nameof(att.CustomConvertionToMethod)}'{att.CustomConvertionToMethod}'不存在 --press key 以继续", log);
+                                                    Console.ReadKey();
+                                                    continue;
+                                                }
+                                                else {
+                                                    opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Dup));
+                                                    opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, opImplicit.Parameters[0]));
+                                                    opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt, convertTo_prop.GetMethod));
+                                                    opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Call, convMethod));
+                                                    opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Callvirt, destination.MainModule.ImportReference(convertFrom_refleProp.SetMethod)));
+                                                }
+                                            }
+                                        }
+                                        else {
 
+                                            var convertFrom_prop_typeRef = destination.MainModule.ImportReference(convertFrom_refleProp.PropertyType);
+                                            var convertFrom_prop_typeDef = convertFrom_prop_typeRef.Resolve();
 
-                                        var convertFrom_prop_typeRef = destination.MainModule.ImportReference(convertFrom_refleProp.PropertyType);
-                                        var convertFrom_prop_typeDef = convertFrom_prop_typeRef.Resolve();
-
-                                        WriteMemberCopyIL(
-                                            opImplict,
-                                            destination.MainModule,
-                                            convertFrom_prop_typeDef,
-                                            convertTo_prop.PropertyType.Resolve(),
-                                            () => Instruction.Create(OpCodes.Callvirt, destination.MainModule.ImportReference(convertFrom_refleProp.GetMethod)),
-                                            () => Instruction.Create(OpCodes.Callvirt, convertTo_prop.SetMethod),
-                                            logger,
-                                            log);
-                                        WriteMemberCopyIL(
-                                            opExplict,
-                                            destination.MainModule,
-                                            convertTo_prop.PropertyType.Resolve(),
-                                            convertFrom_prop_typeDef,
-                                            () => Instruction.Create(OpCodes.Callvirt, convertTo_prop.GetMethod),
-                                            () => Instruction.Create(OpCodes.Callvirt, destination.MainModule.ImportReference(convertFrom_refleProp.SetMethod)),
-                                            logger,
-                                            log);
+                                            WriteMemberCopyIL(
+                                                opImplicit,
+                                                destination.MainModule,
+                                                convertFrom_prop_typeDef,
+                                                convertTo_prop.PropertyType.Resolve(),
+                                                () => Instruction.Create(OpCodes.Callvirt, destination.MainModule.ImportReference(convertFrom_refleProp.GetMethod)),
+                                                () => Instruction.Create(OpCodes.Callvirt, convertTo_prop.SetMethod),
+                                                logger,
+                                                log);
+                                            WriteMemberCopyIL(
+                                                opExplicit,
+                                                destination.MainModule,
+                                                convertTo_prop.PropertyType.Resolve(),
+                                                convertFrom_prop_typeDef,
+                                                () => Instruction.Create(OpCodes.Callvirt, convertTo_prop.GetMethod),
+                                                () => Instruction.Create(OpCodes.Callvirt, destination.MainModule.ImportReference(convertFrom_refleProp.SetMethod)),
+                                                logger,
+                                                log);
+                                        }
                                     }
                                     else {
                                         logger.WriteLine($"无法在'{convertFrom_refleType.Name}'中查找得对应映射属性'{convertFrom_member.Name}' --press key 以继续", log);
@@ -91,27 +153,73 @@ namespace EnchCoreApi.TrProtocol.Patcher {
                                     if (convertTo_Field is not null) {
 
                                         var convertFrom_field = destination.MainModule.ImportReference(convertFrom_refleField);
-                                        var convertFrom_field_typeRef = convertFrom_field.FieldType;
-                                        var convertFrom_field_typeDef = convertFrom_field_typeRef.Resolve();
 
-                                        WriteMemberCopyIL(
-                                            opImplict,
-                                            destination.MainModule,
-                                            convertFrom_field_typeDef,
-                                            convertTo_Field.FieldType.Resolve(),
-                                            () => Instruction.Create(OpCodes.Ldfld, convertFrom_field),
-                                            () => Instruction.Create(OpCodes.Stfld, convertTo_Field),
-                                            logger,
-                                            log);
-                                        WriteMemberCopyIL(
-                                            opExplict,
-                                            destination.MainModule,
-                                            convertTo_Field.FieldType.Resolve(),
-                                            convertFrom_field_typeDef,
-                                            () => Instruction.Create(OpCodes.Ldfld, convertTo_Field),
-                                            () => Instruction.Create(OpCodes.Stfld, convertFrom_field),
-                                            logger,
-                                            log);
+                                        if (att.Option == ConvertionOption.Custom) {
+                                            if (att.CustomConvertionFromMethod is null) {
+                                                logger.WriteLineError($"自定义成员转换的{nameof(att.CustomConvertionFromMethod)}为null --press key 以继续", log);
+                                                Console.ReadKey();
+                                                continue;
+                                            }
+                                            else {
+                                                var convMethod = convertTo_type.Methods.FirstOrDefault(m => m.Name == att.CustomConvertionFromMethod);
+                                                if (convMethod is null) {
+                                                    logger.WriteLineError($"自定义成员转换的{nameof(att.CustomConvertionFromMethod)}'{att.CustomConvertionFromMethod}'不存在 --press key 以继续", log);
+                                                    Console.ReadKey();
+                                                    continue;
+                                                }
+                                                else {
+                                                    opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Dup));
+                                                    opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, opImplicit.Parameters[0]));
+                                                    opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, convertFrom_field));
+                                                    opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Call, convMethod));
+                                                    opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, convertTo_Field));
+                                                }
+                                            }
+                                            if (att.CustomConvertionToMethod is null) {
+                                                logger.WriteLineError($"自定义成员转换的{nameof(att.CustomConvertionToMethod)}为null --press key 以继续", log);
+                                                Console.ReadKey();
+                                                continue;
+                                            }
+                                            else {
+                                                var convMethod = convertTo_type.Methods.FirstOrDefault(m => m.Name == att.CustomConvertionToMethod);
+                                                if (convMethod is null) {
+                                                    logger.WriteLineError($"自定义成员转换的{nameof(att.CustomConvertionToMethod)}'{att.CustomConvertionToMethod}'不存在 --press key 以继续", log);
+                                                    Console.ReadKey();
+                                                    continue;
+                                                }
+                                                else {
+                                                    opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Dup));
+                                                    opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, opImplicit.Parameters[0]));
+                                                    opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, convertTo_Field));
+                                                    opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Call, convMethod));
+                                                    opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, convertFrom_field));
+                                                }
+                                            }
+                                        }
+                                        else {
+
+                                            var convertFrom_field_typeRef = convertFrom_field.FieldType;
+                                            var convertFrom_field_typeDef = convertFrom_field_typeRef.Resolve();
+
+                                            WriteMemberCopyIL(
+                                                opImplicit,
+                                                destination.MainModule,
+                                                convertFrom_field_typeDef,
+                                                convertTo_Field.FieldType.Resolve(),
+                                                () => Instruction.Create(OpCodes.Ldfld, convertFrom_field),
+                                                () => Instruction.Create(OpCodes.Stfld, convertTo_Field),
+                                                logger,
+                                                log);
+                                            WriteMemberCopyIL(
+                                                opExplicit,
+                                                destination.MainModule,
+                                                convertTo_Field.FieldType.Resolve(),
+                                                convertFrom_field_typeDef,
+                                                () => Instruction.Create(OpCodes.Ldfld, convertTo_Field),
+                                                () => Instruction.Create(OpCodes.Stfld, convertFrom_field),
+                                                logger,
+                                                log);
+                                        }
                                     }
                                     else {
                                         logger.WriteLine($"无法在'{convertFrom_refleType.Name}'中查找得对应映射属性'{convertFrom_member.Name}' --press key 以继续", log);
@@ -121,11 +229,8 @@ namespace EnchCoreApi.TrProtocol.Patcher {
                             }
                         }
 
-                        opImplict.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-                        opExplict.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-
-                        convertTo_type.Methods.Add(opImplict);
-                        convertTo_type.Methods.Add(opExplict);
+                        opImplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+                        opExplicit.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
                     }
                     else {
                         logger.WriteLine($"未查找到类型定义:'{convert.Type}' --press key 以继续");
@@ -134,9 +239,6 @@ namespace EnchCoreApi.TrProtocol.Patcher {
                 }
             }
         }
-        //static MethodDefinition MergyMemberCastMethod(AssemblyDefinition convertion, string methodName, MethodDefinition opImplict, MethodDefinition opExplict) {
-        //    convertion.MainModule.
-        //}
 
         static void WriteMemberCopyIL(MethodDefinition opMethod, ModuleDefinition main, TypeDefinition memberTypeFrom, TypeDefinition memberTypeTo, Func<Instruction> getValue, Func<Instruction> setValue, Logger logger, LogData parentLog) {
             if (memberTypeTo.FullName == memberTypeFrom.FullName) {
@@ -228,15 +330,22 @@ namespace EnchCoreApi.TrProtocol.Patcher {
         }
 
         static MethodDefinition? CreateCastOperator(string operatorName, ModuleDefinition main, TypeReference typeFrom, TypeDefinition typeTo) {
-            bool typeToIsInLocalAssembly = typeTo.Module.FileName == main.FileName;
 
             var op = new MethodDefinition(operatorName, MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Static, main.ImportReference(typeTo));
-            op.Body = new MethodBody(op);
             var opImplict_param = new ParameterDefinition("a", ParameterAttributes.None, typeFrom);
             op.Parameters.Add(opImplict_param);
 
-            if (typeTo.IsValueType) {
-                op.Body.Instructions.Add(Instruction.Create(OpCodes.Initobj, typeTo));
+            op.Body = CreateCastOperatorBody(main, op);
+
+            return op;
+        }
+        static MethodBody CreateCastOperatorBody(ModuleDefinition main, MethodDefinition method) {
+            var body = new MethodBody(method);
+            var typeTo = method.ReturnType.Resolve();
+
+            bool typeToIsInLocalAssembly = typeTo.Module.FileName == main.FileName;
+            if (method.ReturnType.IsValueType) {
+                body.Instructions.Add(Instruction.Create(OpCodes.Initobj, typeTo));
             }
             else {
                 var convertTo_ctor = typeTo.Methods.FirstOrDefault(m => m.IsConstructor && m.Parameters.Count == 0);
@@ -262,10 +371,10 @@ namespace EnchCoreApi.TrProtocol.Patcher {
                         Console.ReadKey();
                     }
                 }
-                op.Body.Instructions.Add(Instruction.Create(OpCodes.Newobj, main.ImportReference(convertTo_ctor)));
+                body.Instructions.Add(Instruction.Create(OpCodes.Newobj, main.ImportReference(convertTo_ctor)));
             }
 
-            return op;
+            return body;
         }
     }
 }
