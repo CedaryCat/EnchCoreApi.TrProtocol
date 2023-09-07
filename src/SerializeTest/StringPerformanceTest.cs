@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SerializeTest {
     public class StringPerformanceTest {
-        const string text = "Terraria，启动！他真启动了吗，如启，启了吗，如启，他真启了吗，如启，他很厉害，他不是一个真的客户端。";
+        const string text = "Terraria，启动！他真启动了吗。";
         //const int testSize = 100000000;
         const int bufferSize = 1024;
         public readonly byte[] buffer = new byte[bufferSize];
@@ -19,6 +19,8 @@ namespace SerializeTest {
             memory = new MemoryStream(buffer);
             br = new BinaryReader(memory);
             bw = new BinaryWriter(memory);
+            bw.Write(text);
+            memory.Position = 0;
         }
 
         [MemoryDiagnoser, RankColumn]
@@ -89,7 +91,14 @@ namespace SerializeTest {
             public unsafe void UnsafeRead2() {
                 fixed (void* ptr = buffer) {
                     var p = ptr;
-                    CommonCode.ReadString(ref p);
+                    CommonCode.ReadString2(ref p);
+                }
+            }
+            [Benchmark]
+            public unsafe void UnsafeRead3() {
+                fixed (void* ptr = buffer) {
+                    var p = ptr;
+                    CommonCode.ReadString3(ref p);
                 }
             }
         }

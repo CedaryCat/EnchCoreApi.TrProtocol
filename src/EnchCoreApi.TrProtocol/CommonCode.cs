@@ -1,11 +1,15 @@
-﻿
-using System.Buffers;
+﻿using System.Buffers;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace EnchCoreApi.TrProtocol {
-    public static class CommonCode {
+    public unsafe static class CommonCode {
+        static delegate*<int, string> FastAllocateString;
+        static CommonCode() {
+            FastAllocateString = (delegate*<int, string>)typeof(string).GetRuntimeMethods().First(m => m.Name == "FastAllocateString").MethodHandle.GetFunctionPointer();
+        }
         public unsafe static string ReadString(Span<byte> buffer, ref int index) {
             fixed (byte* ptr = buffer) {
                 using var s = new UnmanagedMemoryStream(ptr, buffer.Length - index);
@@ -66,7 +70,7 @@ namespace EnchCoreApi.TrProtocol {
             }
 
 
-            for (int shift = 0; shift < MaxBytesWithoutOverflow * 7; shift += 7) {
+            for (int shift = 7; shift < MaxBytesWithoutOverflow * 7; shift += 7) {
                 // ReadByte handles end of stream cases for us.
                 byteReadJustNow = Unsafe.Read<byte>(ptr_current);
                 ptr_current = Unsafe.Add<byte>(ptr_current, 1);
@@ -100,7 +104,7 @@ namespace EnchCoreApi.TrProtocol {
             fixed (char* charPtr = charBuffer) {
                 Len = encoding.GetChars((byte*)ptr_current, Len, charPtr, Len);
             }
-            //var str = new string(charBuffer);
+            //var str = new string(str);
             //return str;
             return charBuffer[..Len];
         }
@@ -133,7 +137,7 @@ namespace EnchCoreApi.TrProtocol {
             }
 
 
-            for (int shift = 0; shift < MaxBytesWithoutOverflow * 7; shift += 7) {
+            for (int shift = 7; shift < MaxBytesWithoutOverflow * 7; shift += 7) {
                 // ReadByte handles end of stream cases for us.
                 byteReadJustNow = Unsafe.Read<byte>(ptr_current);
                 ptr_current = Unsafe.Add<byte>(ptr_current, 1);
@@ -163,7 +167,7 @@ namespace EnchCoreApi.TrProtocol {
             }
             string str;
             ptr = Unsafe.Add<byte>(ptr_current, Len);
-            //var charBuffer = new string(default, Len); //new char[Len];
+            //var str = new string(default, Len); //new char[Len];
             var buffer = new char[Len];
             fixed (char* charPtr = buffer) {
                 Len = encoding.GetChars((byte*)ptr_current, Len, charPtr, Len);
@@ -172,7 +176,74 @@ namespace EnchCoreApi.TrProtocol {
                     Unsafe.CopyBlock(charPtrTo, charPtr, (uint)(sizeof(char) * Len));
                 }
             }
-            //var str = new string(charBuffer);
+            //var str = new string(str);
+            //return str;
+            return str;
+        }
+        public unsafe static string ReadString3(ref void* ptr) {
+            int Len = 0;
+            var ptr_current = ptr;
+            uint stringByteLen_Uint = 0;
+
+            // Read the integer 7 bits at a time. The high bit
+            // of the byte when on means to continue reading more bytes.
+            //
+            // There are two failure cases: we've read more than 5 bytes,
+            // or the fifth byte is about to cause integer overflow.
+            // This means that we can read the first 4 bytes without
+            // worrying about integer overflow.
+
+            const int MaxBytesWithoutOverflow = 4;
+
+            var byteReadJustNow = Unsafe.Read<byte>(ptr_current);
+            ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+            stringByteLen_Uint = byteReadJustNow & 0x7Fu;
+
+            if (byteReadJustNow == 0) {
+                ptr = ptr_current;
+                return string.Empty;
+            }
+
+            if (byteReadJustNow <= 0x7Fu) {
+                goto getStringLen_finial;
+            }
+
+
+            for (int shift = 7; shift < MaxBytesWithoutOverflow * 7; shift += 7) {
+                // ReadByte handles end of stream cases for us.
+                byteReadJustNow = Unsafe.Read<byte>(ptr_current);
+                ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+                stringByteLen_Uint |= (byteReadJustNow & 0x7Fu) << shift;
+
+                if (byteReadJustNow <= 0x7Fu) {
+                    goto getStringLen_finial;
+                }
+            }
+
+            // Read the 5th byte. Since we already read 28 bits,
+            // the value of this byte must fit within 4 bits (32 - 28),
+            // and it must not have the high bit set.
+
+            byteReadJustNow = Unsafe.Read<byte>(ptr_current);
+            ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+            if (byteReadJustNow > 0b_1111u) {
+                ptr = ptr_current;
+                throw new FormatException("");
+            }
+
+            stringByteLen_Uint |= (uint)byteReadJustNow << (MaxBytesWithoutOverflow * 7);
+
+        getStringLen_finial:
+            if ((Len = (int)stringByteLen_Uint) < 0) {
+                throw new FormatException();
+            }
+
+            ptr = Unsafe.Add<byte>(ptr_current, Len);
+            var str = FastAllocateString(Len);
+            fixed (char* charPtr = str) {
+                Unsafe.Write(Unsafe.Subtract<int>(charPtr, 1), encoding.GetChars((byte*)ptr_current, Len, charPtr, Len));
+            }
+            //var str = new string(str);
             //return str;
             return str;
         }

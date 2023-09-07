@@ -15,11 +15,5 @@
   <ItemGroup>
     <ProjectReference Include="..\EnchCoreApi.TrProtocol\EnchCoreApi.TrProtocol.csproj" />
   </ItemGroup>
-	
-  <ItemGroup>
-    <Reference Include="OTAPI">
-      <HintPath>..\EnchCoreApi.TrProtocol.Patcher\Output\OTAPI.dll</HintPath>
-    </Reference>
-  </ItemGroup>
 
 </Project>
