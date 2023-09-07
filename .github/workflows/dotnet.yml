@@ -25,11 +25,11 @@ jobs:
     - name: Build Patcher
       run: |
         cd src/EnchCoreApi.TrProtocol.Patcher
-        dotnet build EnchCoreApi.TrProtocol.Patcher.csproj --configuration Release
+        dotnet build EnchCoreApi.TrProtocol.Patcher.csproj --configuration Release --output .temp
 
     - name: Run Patcher
       run: |
-        cd src/nchCoreApi.TrProtocol\EnchCoreApi.TrProtocol.Patcher\bin\Release\net6.0
+        cd src/EnchCoreApi.TrProtocol.Patcher\.temp
         ./EnchCoreApi.TrProtocol.Patcher.exe
 
     - name: Restore dependencies
