@@ -44,12 +44,12 @@ jobs:
 
     - name: Copy Files
       run: |
-        mkdir ./release
-        copy /b /y ./src/publish/EnchCoreApi.TrProtocol.dll ./release
-        copy /b /y ./src/publish/EnchCoreApi.TrProtocol.pdb ./release
-        copy /b /y ./Output/OTAPI.dll ./release
+        mkdir release
+        copy src/publish/EnchCoreApi.TrProtocol.dll release
+        copy src/publish/EnchCoreApi.TrProtocol.pdb release
+        copy Output/OTAPI.dll release
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v3.1.2
       with:
-        path: ./release
+        path: release
