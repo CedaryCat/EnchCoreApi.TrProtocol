@@ -42,8 +42,14 @@ jobs:
         cd src
         dotnet publish --configuration Release --output ./publish
 
+    - name: Copy Files
+      run: |
+        mkdir .output
+        xcopy /e /y /i /q ./src/publish/EnchCoreApi.TrProtocol.dll ./.output/
+        xcopy /e /y /i /q ./src/publish/EnchCoreApi.TrProtocol.pdb ./.output/
+        xcopy /e /y /i /q ./Output/OTAPI.dll ./.output/
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v3.1.2
       with:
-        path: src/publish
+        path: ./.output
