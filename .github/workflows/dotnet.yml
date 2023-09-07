@@ -37,10 +37,10 @@ jobs:
         cd src
         dotnet restore
 
-    - name Build
+    - name: Build
       run: |
-      cd src
-      dotnet publish --configuration Release --output ./publish
+        cd src
+        dotnet publish --configuration Release --output ./publish
 
 
     - name: Upload Artifact
