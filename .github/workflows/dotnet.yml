@@ -44,12 +44,12 @@ jobs:
 
     - name: Copy Files
       run: |
-        mkdir ./output
-        xcopy /e /y /i /q ./src/publish/EnchCoreApi.TrProtocol.dll ./output/
-        xcopy /e /y /i /q ./src/publish/EnchCoreApi.TrProtocol.pdb ./output/
-        xcopy /e /y /i /q ./Output/OTAPI.dll ./output/
+        mkdir ./release
+        xcopy /e /y /i /q ./src/publish/EnchCoreApi.TrProtocol.dll ./release/
+        xcopy /e /y /i /q ./src/publish/EnchCoreApi.TrProtocol.pdb ./release/
+        xcopy /e /y /i /q ./Output/OTAPI.dll ./release/
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v3.1.2
       with:
-        path: ./output
+        path: ./release
