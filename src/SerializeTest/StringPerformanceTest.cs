@@ -36,26 +36,41 @@ namespace SerializeTest {
                 using var bw = new BinaryWriter(ms);
                 bw.Write(text);
             }
+            public readonly byte[] buffer1 = new byte[bufferSize];
             [Benchmark]
             public unsafe void UnmanagedMemoryBinaryWrite() {
-                fixed (byte* ptr = buffer) {
+                fixed (byte* ptr = buffer1) {
                     using var ms = new UnmanagedMemoryStream(ptr, bufferSize);
                     using var bw = new BinaryWriter(ms);
                     bw.Write(text);
                 }
             }
+            public readonly byte[] buffer2 = new byte[bufferSize];
             [Benchmark]
             public unsafe void UnsafeWrite() {
-                fixed (void* ptr = buffer) {
+                fixed (void* ptr = buffer2) {
                     var p = ptr;
                     CommonCode.WriteString(ref p, text);
                 }
             }
+            public readonly byte[] buffer3 = new byte[bufferSize];
             [Benchmark]
-            public unsafe void UnsafeWrite2() {
-                fixed (void* ptr = buffer) {
+            public unsafe void UnsafeWrite2()
+            {
+                fixed (void* ptr = buffer3)
+                {
                     var p = ptr;
                     CommonCode.WriteString2(ref p, text);
+                }
+            }
+            public readonly byte[] buffer4 = new byte[bufferSize];
+            [Benchmark]
+            public unsafe void UnsafeWrite3()
+            {
+                fixed (void* ptr = buffer4)
+                {
+                    var p = ptr;
+                    CommonCode.WriteString3(ref p, text);
                 }
             }
         }
@@ -95,10 +110,21 @@ namespace SerializeTest {
                 }
             }
             [Benchmark]
-            public unsafe void UnsafeRead3() {
-                fixed (void* ptr = buffer) {
+            public unsafe void UnsafeRead3()
+            {
+                fixed (void* ptr = buffer)
+                {
                     var p = ptr;
                     CommonCode.ReadString3(ref p);
+                }
+            }
+            [Benchmark]
+            public unsafe void UnsafeRead_Ex()
+            {
+                fixed (void* ptr = buffer)
+                {
+                    var p = ptr;
+                    CommonCode.ReadString_Ex(ref p);
                 }
             }
         }
