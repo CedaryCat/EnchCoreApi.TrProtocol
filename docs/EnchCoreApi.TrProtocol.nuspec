@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>EnchCoreApi.TrProtocol</id>
+    <title>TrProtocol</title>
+    <version>[INJECT_VERSION]</version>
+    <authors>CedaryCat,Pd233</authors>
+    <owners>CedaryCat</owners>
+    <license type="file">COPYING.txt</license>
+    <projectUrl>https://github.com/CedaryCat/EnchCoreApi.TrProtocol</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+		a efficient terraria packet serializer.
+	</description>
+    <summary>Terraria Protocol [INJECT_VERSION] for Terraria 1.4.3.6[INJECT_GIT_HASH]</summary>
+    <releaseNotes>
+      Preliminary Terraria 1.4.3.6
+    </releaseNotes>
+    <copyright>Copyright 2023-[INJECT_YEAR]</copyright>
+    <tags>Terraria,TrProtocol</tags>
+    [INJECT_DEPENDENCIES]
+  </metadata>
+</package>
