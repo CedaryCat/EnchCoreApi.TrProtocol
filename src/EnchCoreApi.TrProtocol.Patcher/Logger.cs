@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EnchCoreApi.TrProtocol.Patcher {
+namespace EnchCoreApi.TrProtocol.Patcher
+{
+    [MonoMod.MonoModIgnore]
     public abstract class Logger {
         public abstract void WriteLine();
         protected abstract void WriteLine(string message);

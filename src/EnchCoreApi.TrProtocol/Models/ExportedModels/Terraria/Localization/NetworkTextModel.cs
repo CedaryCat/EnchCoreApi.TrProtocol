@@ -35,6 +35,10 @@ public partial class NetworkTextModel : ISerializableData {
         _text = text;
         _mode = mode;
     }
+    public NetworkTextModel()
+    {
+        _text = string.Empty;
+    }
 
     public static NetworkTextModel[] ConvertSubstitutionsToNetworkText(object[] substitutions) {
         NetworkTextModel[] array = new NetworkTextModel[substitutions.Length];

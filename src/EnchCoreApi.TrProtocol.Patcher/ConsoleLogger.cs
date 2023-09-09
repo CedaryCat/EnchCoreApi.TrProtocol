@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EnchCoreApi.TrProtocol.Patcher {
+namespace EnchCoreApi.TrProtocol.Patcher
+{
+    [MonoMod.MonoModIgnore]
     public sealed class ConsoleLogger : Logger {
         public sealed override void WriteLine() {
             Console.ForegroundColor = ConsoleColor.White;

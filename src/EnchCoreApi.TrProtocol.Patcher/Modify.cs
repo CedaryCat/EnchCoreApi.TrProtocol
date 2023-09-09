@@ -1,7 +1,9 @@
 ﻿using Mono.Cecil;
 using Assembly = System.Reflection.Assembly;
 
-namespace EnchCoreApi.TrProtocol.Patcher {
+namespace EnchCoreApi.TrProtocol.Patcher
+{
+    [MonoMod.MonoModIgnore]
     public abstract class Modify {
         protected readonly AssemblyDefinition destination;
         protected readonly Assembly modelsAssembly;

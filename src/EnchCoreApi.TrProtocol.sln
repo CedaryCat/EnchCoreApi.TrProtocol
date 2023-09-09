@@ -9,8 +9,6 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "EnchCoreApi.TrProtocol.Shar
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol", "EnchCoreApi.TrProtocol\EnchCoreApi.TrProtocol.csproj", "{77DE9350-9D6B-423F-B0D0-1242AD44828C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.Patcher", "EnchCoreApi.TrProtocol.Patcher\EnchCoreApi.TrProtocol.Patcher.csproj", "{D50FB112-D414-4E05-BE64-E2E456C81D13}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.Convertion", "EnchCoreApi.TrProtocol.Convertion\EnchCoreApi.TrProtocol.Convertion.csproj", "{A5C82068-CAC3-4AD0-91AF-39A06031981D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SerializeTest", "SerializeTest\SerializeTest.csproj", "{CEC2A08C-49AD-4CEB-BE97-323829F32ACD}"
@@ -31,10 +29,6 @@ Global
 		{77DE9350-9D6B-423F-B0D0-1242AD44828C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77DE9350-9D6B-423F-B0D0-1242AD44828C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77DE9350-9D6B-423F-B0D0-1242AD44828C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D50FB112-D414-4E05-BE64-E2E456C81D13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D50FB112-D414-4E05-BE64-E2E456C81D13}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D50FB112-D414-4E05-BE64-E2E456C81D13}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D50FB112-D414-4E05-BE64-E2E456C81D13}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A5C82068-CAC3-4AD0-91AF-39A06031981D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A5C82068-CAC3-4AD0-91AF-39A06031981D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5C82068-CAC3-4AD0-91AF-39A06031981D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -50,6 +44,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7681860C-D047-4551-81E8-6C1827FC1C06}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		EnchCoreApi.TrProtocol.Shared\EnchCoreApi.TrProtocol.Shared.projitems*{336c3622-9900-418e-b4e3-7319d504a64d}*SharedItemsImports = 5
