@@ -1,11 +1,24 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
+	<Version>1.0.1</Version>
+	<PackageReleaseNotes>Initial 1.4.4.9 support</PackageReleaseNotes>
+	<PackageLicenseFile>COPYING.txt</PackageLicenseFile>
+	<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\COPYING.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\EnchCoreApi.TrProtocol.SerializeCodeGenerator\EnchCoreApi.TrProtocol.SerializeCodeGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

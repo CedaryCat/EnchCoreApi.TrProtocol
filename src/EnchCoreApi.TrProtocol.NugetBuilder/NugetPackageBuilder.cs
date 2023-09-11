@@ -37,10 +37,20 @@ namespace EnchCoreApi.TrProtocol.NugetBuilder
         public void Build()
         {
             var nuspec_xml = File.ReadAllText(NuspecPath);
-            nuspec_xml = nuspec_xml.Replace("[INJECT_VERSION]", GetNugetVersionFromAssembly<MessageID>());
 
-            var commitSha = GetGitCommitSha();
-            nuspec_xml = nuspec_xml.Replace("[INJECT_GIT_HASH]", String.IsNullOrWhiteSpace(commitSha) ? "" : $" git#{commitSha}");
+            var version = GetNugetVersionFromAssembly<MessageID>();
+            var gitIndex = version.IndexOf('+');
+            if (gitIndex > -1) {
+                var gitCommitSha = version[(gitIndex + 1)..];
+                version = version[..gitIndex];
+                nuspec_xml = nuspec_xml.Replace("[INJECT_GIT_HASH]", $" git#{gitCommitSha}");
+            }
+            else
+            {
+                nuspec_xml = nuspec_xml.Replace("[INJECT_GIT_HASH]", "");
+            }
+
+            nuspec_xml = nuspec_xml.Replace("[INJECT_VERSION]", version);
 
             var platforms = new[] { "net6.0" };
             var xml_dependency = "";

@@ -12,9 +12,9 @@
     <description>
 		a efficient terraria packet serializer.
 	</description>
-    <summary>Terraria Protocol [INJECT_VERSION] for Terraria 1.4.3.6[INJECT_GIT_HASH]</summary>
+    <summary>Terraria Protocol [INJECT_VERSION] for Terraria 1.4.4.9[INJECT_GIT_HASH]</summary>
     <releaseNotes>
-      Preliminary Terraria 1.4.3.6
+      Preliminary Terraria 1.4.4.9
     </releaseNotes>
     <copyright>Copyright 2023-[INJECT_YEAR]</copyright>
     <tags>Terraria,TrProtocol</tags>
