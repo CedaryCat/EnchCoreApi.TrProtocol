@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SerializeTest {
     public class StringPerformanceTest {
-        const string text = "Terraria，启动！他真启动了吗。";
+        const string text = "原神，启动！";
         //const int testSize = 100000000;
         const int bufferSize = 1024;
         public readonly byte[] buffer = new byte[bufferSize];
