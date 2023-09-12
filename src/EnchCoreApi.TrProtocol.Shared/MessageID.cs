@@ -243,6 +243,7 @@
         SyncItemCannotBeTakenByEnemies = 148,
 
         ServerInfo = 149,
-        PlayerPlatformInfo = 150
+        PlayerPlatformInfo = 150,
+        Count,
     }
 }
