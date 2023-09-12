@@ -23,7 +23,7 @@ public partial class SyncProjectile : NetPacket, IProjSlot, IPlayerSlot {
     [Condition(nameof(Bit1), 3)]
     public ushort BannerId;
     [Condition(nameof(Bit1), 4)]
-    public short Damange;
+    public short Damage;
     [Condition(nameof(Bit1), 5)]
     public float Knockback;
     [Condition(nameof(Bit1), 6)]
