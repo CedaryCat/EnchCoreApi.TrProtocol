@@ -7,7 +7,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyVersion>1.0.1.0</AssemblyVersion>
     <FileVersion>1.0.1.0</FileVersion>
-	<Version>1.0.1-alpha1</Version>
+	<Version>1.0.2-alpha1</Version>
 	<PackageReleaseNotes>Initial 1.4.4.9 support</PackageReleaseNotes>
 	<PackageLicenseFile>COPYING.txt</PackageLicenseFile>
 	<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
