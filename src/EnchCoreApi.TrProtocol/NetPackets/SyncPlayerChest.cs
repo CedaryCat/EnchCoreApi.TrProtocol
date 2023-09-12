@@ -9,5 +9,5 @@ public partial class SyncPlayerChest : NetPacket {
     public Point16 Position;
     public byte NameLength;
     [ConditionGreaterThan(nameof(NameLength), 0), ConditionLessThanEqual(nameof(NameLength), 20)]
-    public string Name;
+    public string? Name;
 }

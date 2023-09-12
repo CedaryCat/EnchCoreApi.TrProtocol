@@ -622,7 +622,6 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                     string conditionMemberName;
                                                     string conditionMemberAccess;
                                                     string checkValue;
-
                                                     if (conditionArgs[0].Expression.IsLiteralExpression(out var text1) && text1.StartsWith("\"") && text1.EndsWith("\"")) {
                                                         conditionMemberAccess = (parant_var is null ? "" : $"{parant_var}.") + (conditionMemberName = text1[1..^1]);
                                                     }
@@ -635,6 +634,10 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
 
                                                     if (conditionArgs[1].Expression.IsLiteralExpression(out var text3) && int.TryParse(text3, out _)) {
                                                         checkValue = text3;
+                                                    }
+                                                    else if (conditionArgs[1].Expression is PrefixUnaryExpressionSyntax pu && pu.OperatorToken.Text == "-" && pu.Operand.IsLiteralExpression(out var text4) && int.TryParse(text4, out _))
+                                                    {
+                                                        checkValue = pu.ToString();
                                                     }
                                                     else if (conditionArgs[1].Expression is InvocationExpressionSyntax invo2 && invo2.Expression.ToString() == "sizeof") {
                                                         checkValue = invo2.ToString();
@@ -682,7 +685,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                             }
 
                                             if (conditionAnd.Count == 1) {
-                                                conditions.Add(conditionAnd.First());
+                                                conditions.Add(conditionAnd[0]);
                                             }
                                             else if (conditionAnd.Count > 1) {
                                                 conditions.Add($"({string.Join(" && ", conditionAnd)})");
