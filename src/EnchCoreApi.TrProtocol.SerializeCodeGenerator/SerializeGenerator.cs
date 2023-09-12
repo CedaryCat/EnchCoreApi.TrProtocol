@@ -608,11 +608,11 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
 
                                                 string? condiOperator = (conditionAtt.Name.ToString()) switch {
                                                     nameof(ConditionEqualAttribute) or "ConditionEqual" => "==",
-                                                    nameof(ConditionNotEqualAttribute) or "ConditionEqual" => "==",
-                                                    nameof(ConditionGreaterThanAttribute) or "ConditionEqual" => ">",
-                                                    nameof(ConditionGreaterThanEqualAttribute) or "ConditionEqual" => ">=",
-                                                    nameof(ConditionLessThanAttribute) or "ConditionEqual" => "<",
-                                                    nameof(ConditionLessThanEqualAttribute) or "ConditionEqual" => "<=",
+                                                    nameof(ConditionNotEqualAttribute) or "ConditionNotEqual" => "!=",
+                                                    nameof(ConditionGreaterThanAttribute) or "ConditionGreaterThan" => ">",
+                                                    nameof(ConditionGreaterThanEqualAttribute) or "ConditionGreaterThanEqual" => ">=",
+                                                    nameof(ConditionLessThanAttribute) or "ConditionLessThan" => "<",
+                                                    nameof(ConditionLessThanEqualAttribute) or "ConditionLessThanEqual" => "<=",
                                                     _ => null,
                                                 };
 
