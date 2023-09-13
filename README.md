@@ -1,4 +1,7 @@
-**EnchCoreApi.TrProtocol**
+**EnchCoreApi.TrProtocol** 
+[![GitHub Workflow](https://img.shields.io/github/workflow/status/CedaryCat/EnchCoreApi.TrProtocol/CI?logo=GitHub)](https://github.com/CedaryCat/EnchCoreApi.TrProtocol/actions) 
+[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/EnchCoreApi.TrProtocol?label=EnchCoreApi.TrProtocol)](https://www.nuget.org/packages/EnchCoreApi.TrProtocol) 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) 
 ===
 ### A efficient terraria packet serializer and partial protocol implement.
 ___
@@ -13,7 +16,7 @@ appreciate their work and contribution. You can find their original project at [
 
 ---
 
-# Installation
+# Installation [![EnchCoreApi.TrProtocol](https://img.shields.io/nuget/vpre/EnchCoreApi.TrProtocol?label=EnchCoreApi.TrProtocol)](https://www.nuget.org/packages/EnchCoreApi.TrProtocol/)
 * You can find and install it in nuget package manager, or you can install it directly from the nuget command line
 ```
 PM> NuGet\Install-Package EnchCoreApi.TrProtocol -Version 1.0.2-beta1
