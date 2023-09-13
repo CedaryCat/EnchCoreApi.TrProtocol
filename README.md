@@ -6,7 +6,7 @@
 ### A efficient terraria packet serializer and partial protocol implement.
 ___
 * This project automatically builds efficient and unsafe working code through IIncrementalGenerator.<br>
-In addition, it provides an additional patch for OTAPI, by extracting some shared types to achieve friendly compatibility with OTAPI.<br>
+In addition, it provides an [additional patch for OTAPI](https://github.com/CedaryCat/EnchCoreApi.TrProtocol.OTAPI), by extracting some shared types to achieve friendly compatibility with OTAPI.<br>
 Therefore, by using this specially designed OTAPI,
 the data structures provided by the protocol library can be used directly in terraria's server programs.
 
