@@ -12,7 +12,33 @@ I have used their data structures as a reference and modified them according to 
 appreciate their work and contribution. You can find their original project at [TrProtocol](https://github.com/chi-rei-den/TrProtocol).
 
 ---
-# Description of Terraria packet structure
+
+# Installation
+* You can find and install it in nuget package manager, or you can install it directly from the nuget command line
+```
+PM> NuGet\Install-Package EnchCoreApi.TrProtocol -Version 1.0.2-beta1
+```
+* Please use version 1.0.2-beta1 because 1.0.2-alpha1 or earlier version may resolves a bug that caused some fields to be serialized incorrectly due to missing conditionals.
+# Usage
+To use EnchCoreApi.TrProtocol, you need to add a reference to the namespace EnchCoreApi.TrProtocol, EnchCoreApi.TrProtocol.NetPackets, EnchCoreApi.TrProtocol.Models .etc 
+```
+using EnchCoreApi.TrProtocol;
+using EnchCoreApi.TrProtocol.Models;
+using EnchCoreApi.TrProtocol.NetPackets;
+```
+```
+// create packet from given parammeters
+var packet = new CombatTextInt(Vector2.Zero, Color.White, 100);
+```
+```
+// create packet from buffer
+fixed (void* ptr = buffer) {
+    var ptr_current = Unsafe.Add<byte>(ptr_current, offset);
+    var packet = new CombatTextInt(ref ptr_current);
+}
+```
+
+## Description of Terraria packet structure
 ### Before we proceed, let us first understand how Terraria handles packet receiving. 
 * For the server, it uses a separate thread to run the **'Neplay.ServerLoop'** method, 
 which calls the **'Neplay.UpdateConnectedClients'** method to constantly read data from 
@@ -104,7 +130,7 @@ public partial class CombatTextInt : NetPacket {
     </tr>
 </table>
 
-# Application notice
+## **Note**
 ### Serizialize
 
 * Under normal circumstances, the protocol library does not need to know the packet header in serialization. 
@@ -150,8 +176,7 @@ data themselves according to their needs.
 that cannot be processed to ExtraData. Therefore, the second argument of **'NetPacket.ReadNetPacket(ref void\*, int restContentSize, bool isServerSide)'** 
 should be filled with **packetContentSize**, which is the value of the **packet header** minus **2**.
 
-
-# Development Expamle (Unfinished)
+# Expamles (Unfinished)
 
 <span id="S2C_CombatTextInt"></span>
 ### 1. Server send a CombatTextInt to player which whoAmI = 0
@@ -179,3 +204,14 @@ fixed (void* ptr = SendBuffer) {
     socket.AsyncSend(SendBuffer, 0, size_short, delegate { }); 
 }
 ```
+
+# RoadMap
+### Planned feature
+---
+* [ ] **Simplify packet construction**
+    * To simplify the packet construction, we plan to provide default values for the assignment parameters of the fields that are not required. 
+However, this will change the order of the arguments, since the parameters with default values must be placed at the end of the constructor. 
+To maintain backward compatibility with older versions of the API, we will generate a new constructor overload with the adjusted parameter order 
+and keep the old constructor as well.
+---
+
