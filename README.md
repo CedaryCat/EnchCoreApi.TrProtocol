@@ -21,16 +21,16 @@ PM> NuGet\Install-Package EnchCoreApi.TrProtocol -Version 1.0.2-beta1
 * Please use version 1.0.2-beta1 because 1.0.2-alpha1 or earlier version may resolves a bug that caused some fields to be serialized incorrectly due to missing conditionals.
 # Usage
 To use EnchCoreApi.TrProtocol, you need to add a reference to the namespace EnchCoreApi.TrProtocol, EnchCoreApi.TrProtocol.NetPackets, EnchCoreApi.TrProtocol.Models .etc 
-```
+```csharp
 using EnchCoreApi.TrProtocol;
 using EnchCoreApi.TrProtocol.Models;
 using EnchCoreApi.TrProtocol.NetPackets;
 ```
-```
+```csharp
 // create packet from given parammeters
 var packet = new CombatTextInt(Vector2.Zero, Color.White, 100);
 ```
-```
+```csharp
 // create packet from buffer
 fixed (void* ptr = buffer) {
     var ptr_current = Unsafe.Add<byte>(ptr_current, offset);
