@@ -108,13 +108,13 @@ public partial class CombatTextInt : NetPacket {
 ### Serizialize
 
 * Under normal circumstances, the protocol library does not need to know the packet header in serialization. 
-Therefore, when using ==**'NetPacket.WriteContent (ref void*)'**==, the user only needs to pass in the pointer to the binary data that represents Type. 
+Therefore, when using **'NetPacket.WriteContent (ref void\*)'**, the user only needs to pass in the pointer to the binary data that represents Type. 
 This is the pointer at index=2 in the diagram table. 
 The protocol library then writes the content of the packet to the pointer position and adds the offset that was written back to the ref void* pointer.
 * So if you want to send a complete packet, your code should probarbly be written like this: [click here](#S2C_CombatTextInt)
 ### Deseriziable
 * In deserialization, however, there is a notable problem. In Terraria, some packets need to be resolved based on the state of the game, 
-such as the ==**'NetCreativePowersModule'**== packet. This packet is used to synchronize the creative powers of the players in the game. In Terraria 
+such as the **'NetCreativePowersModule'** packet. This packet is used to synchronize the creative powers of the players in the game. In Terraria 
 server, it calls the function **'APerPlayerTogglePower.Deserialize_SyncEveryone'**, which has the following code:
 ```csharp
 // Terraria.GameContent.Creative.CreativePowers.APerPlayerTogglePower
@@ -138,16 +138,16 @@ public void Deserialize_SyncEveryone(BinaryReader reader, int userId) {
     }
 }
 ```
-* The condition ==**'CreativePowersHelper.IsAvailableForPlayer(this, userId)'**== shows that the resolution of this packet depends on the player 
+* The condition **'CreativePowersHelper.IsAvailableForPlayer(this, userId)'** shows that the resolution of this packet depends on the player 
 who sent it. However, the protocol library that handles the packets is stateless, meaning it does not keep track of the game state or the players. 
 Therefore, it cannot handle such data properly. 
 
-* To solve this problem, the protocol library implements the ==**IExtraData**== interface for packets that have similar properties. This interface contains 
-an ==**'ExtraData:byte[]'**== Property where unprocessed data at the end of the packet is stored. The users of the protocol library can then handle this 
+* To solve this problem, the protocol library implements the **IExtraData** interface for packets that have similar properties. This interface contains 
+an **'ExtraData:byte[]'** Property where unprocessed data at the end of the packet is stored. The users of the protocol library can then handle this 
 data themselves according to their needs. 
 
 * Because of this, during packet deserialization, the protocol library must know the packet length in order to properly transfer the remaining data 
-that cannot be processed to ExtraData. Therefore, the second argument of ==**'NetPacket.ReadNetPacket(ref void\*, int restContentSize, bool isServerSide)'**== 
+that cannot be processed to ExtraData. Therefore, the second argument of **'NetPacket.ReadNetPacket(ref void\*, int restContentSize, bool isServerSide)'** 
 should be filled with **packetContentSize**, which is the value of the **packet header** minus **2**.
 
 
