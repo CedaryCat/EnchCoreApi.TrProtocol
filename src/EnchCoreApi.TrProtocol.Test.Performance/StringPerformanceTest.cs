@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace EnchCoreApi.TrProtocol.Test.Performance
 {
     public class StringPerformanceTest {
-        const string text = "原神，启动！";
+        const string text = "原神，启动！原神，启动！原神，启动！原神，启动！原神，启动！原神，启动！原神，启动！";
         //const int testSize = 100000000;
         const int bufferSize = 1024;
         public readonly byte[] buffer = new byte[bufferSize];

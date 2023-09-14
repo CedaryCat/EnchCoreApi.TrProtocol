@@ -7,7 +7,7 @@
 ___
 * This project automatically builds efficient and unsafe working code through IIncrementalGenerator.<br>
 In addition, it provides an [additional patch for OTAPI](https://github.com/CedaryCat/EnchCoreApi.TrProtocol.OTAPI), by extracting some shared types to achieve friendly compatibility with OTAPI.<br>
-Therefore, by using this specially designed OTAPI,
+Therefore, by using this specially [designed OTAPI](https://www.nuget.org/packages/EnchCoreApi.TrProtocol.OTAPI) ,
 the data structures provided by the protocol library can be used directly in terraria's server programs.
 
 * This project is based on the protocol data structures from another project by [chi-rei-den](https://github.com/chi-rei-den).
@@ -207,6 +207,77 @@ fixed (void* ptr = SendBuffer) {
     socket.AsyncSend(SendBuffer, 0, size_short, delegate { }); 
 }
 ```
+# Profermance [![GitHub Workflow](https://img.shields.io/badge/Source-Github-d021d6?style=flat&logo=GitHub)](https://github.com/CedaryCat/EnchCoreApi.TrProtocol/EnchCoreApi.TrProtocol.Test.Performance/PacketPerformanceTest.cs) 
+## Take the packet **WorldData (ID=7)** as an example
+* **Note:** skip offset0 because you already know what kind of package it is.
+### Serizialize 
+```
+[Benchmark] public unsafe void Test_Unsafe() {
+    fixed (void* ptr = buffer) {
+        var p = Unsafe.Add<byte>(ptr, 1); // skip offset0
+        worldData.ReadContent(ref p);
+    }
+}
+```
+```
+[Benchmark] public void Test_BinaryWriter() {
+    var bw = new BinaryWriter(new MemoryStream(buffer));
+    bw.BaseStream.Position = 1; // skip offset0
+    bw.Write(worldData.Time);
+    //...
+}
+```
+```
+[Benchmark] public void Test_ReuseBinaryWriter() {
+    bw.BaseStream.Position = 1; // skip offset0
+    bw.Write(worldData.Time);
+    //...
+}
+```
+* **Result**
+
+|                 Method |      Mean |    Error |   StdDev | Rank |   Gen0 | Allocated |
+|----------------------- |:----------:|:---------:|:---------:|:-----:|:-------:|:----------:|
+|            Test_Unsafe |  95.44 ns | 0.362 ns | 0.321 ns |    1 | 0.0086 |      72 B |
+|      Test_BinaryWriter | 339.91 ns | 0.863 ns | 0.720 ns |    3 | 0.0124 |     104 B |
+| Test_ReuseBinaryWriter | 326.54 ns | 0.950 ns | 0.742 ns |    2 |      - |         - |
+
+---
+### Deserizialize
+```
+[Benchmark] public unsafe void Test_Unsafe() {
+    fixed (void* ptr = buffer) {
+        var p = Unsafe.Add<byte>(ptr, 1); // skip offset0
+        worldData.ReadContent(ref p);
+    }
+}
+```
+```
+[Benchmark] public void Test_BinaryReader() {
+    var br = new BinaryReader(new MemoryStream(buffer));
+    br.BaseStream.Position = 1; // skip offset0
+    worldData.Time = br.ReadInt32();
+    //...
+}
+```
+```
+[Benchmark] public void Test_ReuseBinaryReader() {
+    br.BaseStream.Position = 1; // skip offset0
+    worldData.Time = br.ReadInt32();
+    //...
+}
+```
+* **Result**
+
+|                 Method |      Mean |    Error |   StdDev | Rank |   Gen0 | Allocated |
+|----------------------- |:----------:|:---------:|:---------:|:-----:|:-------:|:----------:|
+|            Test_Unsafe |  95.78 ns | 0.713 ns | 0.667 ns |    1 | 0.0086 |      72 B |
+|      Test_BinaryReader | 313.89 ns | 6.125 ns | 8.587 ns |    3 | 0.0877 |     736 B |
+| Test_ReuseBinaryReader | 229.80 ns | 0.564 ns | 0.500 ns |    2 | 0.0086 |      72 B |
+
+---
+## The others
+* The performance of string serialization/deserialization has been improved by about 20%. Due to space constraints, I will not discuss the details here. If you are interested, you can visit [this link](^here^) to see more.
 
 # RoadMap
 ### Planned feature

@@ -30,7 +30,9 @@ namespace EnchCoreApi.TrProtocol.Test
                 Assert.AreEqual(buffer1[i], buffer2[i]);
             }
         }
-        byte[] NetCreativePowersModuleData = new byte[] { 
+
+
+        readonly byte[] NetCreativePowersModuleData = new byte[] { 
             (byte)MessageID.NetModules, //net packet id
             (byte)NetModuleType.NetCreativePowersModule, 0, //net module id
             (byte)CreativePowerTypes.Godmode, 0, //field of PowerType
