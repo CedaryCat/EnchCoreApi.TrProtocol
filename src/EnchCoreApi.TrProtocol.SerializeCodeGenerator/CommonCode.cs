@@ -123,14 +123,31 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                 _ => type.Name,
             };
         }
-        public static string GetFullTypeName(this ITypeSymbol type) {
+        public static string GetFullTypeName(this ITypeSymbol type)
+        {
             var name = type.Name;
             var parent = type.ContainingSymbol;
-            while (parent is ITypeSymbol t && !string.IsNullOrEmpty(t.Name)) {
+            while (parent is ITypeSymbol t && !string.IsNullOrEmpty(t.Name))
+            {
                 name = $"{t.Name}.{name}";
                 parent = t.ContainingSymbol;
             }
             return name;
+        }
+        public static string GetFullNamespace(this ITypeSymbol type)
+        {
+            if (type.ContainingNamespace is not null)
+            {
+                var name = type.ContainingNamespace.Name;
+                var parent = type.ContainingNamespace.ContainingNamespace;
+                while (parent is INamespaceSymbol n && !string.IsNullOrEmpty(n.Name))
+                {
+                    name = $"{n.Name}.{name}";
+                    parent = n.ContainingNamespace;
+                }
+                return name;
+            }
+            return "";
         }
         public static string GetFullName(this ITypeSymbol type) {
             var name = type.Name;

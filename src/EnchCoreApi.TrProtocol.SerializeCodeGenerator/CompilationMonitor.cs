@@ -100,7 +100,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
         public IEnumerable<ITypeSymbol> GetLocalTypesSymbol() {
             return LocalCacheTypeSymbol.Values.SelectMany(list => list).ToArray();
         }
-        public bool TryGetTypeSymbol(string name, [NotNullWhen(true)] out INamedTypeSymbol? type, string? currentNameSpace, string[] usings) {
+        public bool TryGetTypeSymbol(string name, [NotNullWhen(true)] out INamedTypeSymbol? type, string? currentNameSpace, IEnumerable<string> usings) {
             type = null;
             if (CacheTypeSymbol.TryGetValue(name, out var types)) {
                 if (types.Count == 0) return false;
@@ -132,14 +132,33 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                         ForEachChild(child, null, null);
                     }
                 }
-                if (node is NamespaceDeclarationSyntax nd) {
-                    if (parentName is null) {
+                if (node is NamespaceDeclarationSyntax nd)
+                {
+                    if (parentName is null)
+                    {
                         parentName = nd.Name.ToString();
                     }
-                    else {
+                    else
+                    {
                         parentName = $"{parentName}.{nd.Name}";
                     }
-                    foreach (var child in node.ChildNodes()) {
+                    foreach (var child in node.ChildNodes())
+                    {
+                        ForEachChild(child, parentName, null);
+                    }
+                }
+                else if (node is FileScopedNamespaceDeclarationSyntax fsnd)
+                {
+                    if (parentName is null)
+                    {
+                        parentName = fsnd.Name.ToString();
+                    }
+                    else
+                    {
+                        parentName = $"{parentName}.{fsnd.Name}";
+                    }
+                    foreach (var child in node.ChildNodes())
+                    {
                         ForEachChild(child, parentName, null);
                     }
                 }
@@ -173,7 +192,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                 }
             }
         }
-        public bool TryGetTypeDefSyntax(string name, [NotNullWhen(true)] out TypeDeclarationSyntax? type, string? currentNameSpace, string[] usings) {
+        public bool TryGetTypeDefSyntax(string name, [NotNullWhen(true)] out TypeDeclarationSyntax? type, string? currentNameSpace, IEnumerable<string> usings) {
             type = null;
             if (LocalCacheTypeSyntax.TryGetValue(name, out var types)) {
                 if (types.Count == 0) return false;
