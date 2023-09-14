@@ -357,8 +357,8 @@ namespace EnchCoreApi.TrProtocol {
             {
                 fixed (char* char_ptr = value)
                 {
-                    var byte_ptr = stackalloc char[len];
-                    len = encoding.GetBytes(char_ptr, value.Length, (byte*)ptr_current, len);
+                    var byte_ptr = stackalloc byte[len];
+                    len = encoding.GetBytes(char_ptr, value.Length, byte_ptr, len);
 
                     uint len_uint;
                     for (len_uint = (uint)len; len_uint > 127; len_uint >>= 7)
