@@ -277,7 +277,7 @@ fixed (void* ptr = SendBuffer) {
 
 ---
 ## The others
-* The performance of string serialization/deserialization has been improved by about 20%. Due to space constraints, I will not discuss the details here. If you are interested, you can visit [this link](^here^) to see more.
+* The performance of string serialization/deserialization has been improved by about 20%. Due to space constraints, I will not discuss the details here. If you are interested, you can visit [this link](https://github.com/CedaryCat/EnchCoreApi.TrProtocol/blob/master/src/EnchCoreApi.TrProtocol.Test.Performance/StringPerformanceTest.cs) to see more.
 
 # RoadMap
 ### Planned feature
