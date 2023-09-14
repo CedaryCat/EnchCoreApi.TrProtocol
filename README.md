@@ -217,4 +217,9 @@ However, this will change the order of the arguments, since the parameters with 
 To maintain backward compatibility with older versions of the API, we will generate a new constructor overload with the adjusted parameter order 
 and keep the old constructor as well.
 ---
+* [ ] **XML annotation for construction**
+    * We plan to add an XML annotation to the constructor of each packet that receives the initialization content from the pointer. 
+This annotation will remind the user how to use it correctly. Such constructors are usually used by the protocol library, 
+and they should not be used by the user unless they know exactly what they are doing. Otherwise, the user should use another method of reading the packet from the pointer, 
+such as **'NetPacket.ReadNetPacket'**.
 
