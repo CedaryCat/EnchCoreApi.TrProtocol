@@ -2,7 +2,7 @@
 
 namespace Terraria;
 [TypeMigrationTarget]
-public enum PlayerSpawnContext {
+public enum PlayerSpawnContext : byte {
     ReviveFromDeath,
     SpawningIntoWorld,
     RecallFromItem

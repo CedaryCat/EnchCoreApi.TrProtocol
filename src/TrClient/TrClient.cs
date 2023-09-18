@@ -87,10 +87,8 @@ namespace TrClient {
         public IEnumerable<NetPacket> Receive() {
             var array = ArrayPool<NetPacket>.Shared.Rent(1024);
             int arrayIndex = 0;
-            var readStart = 0;
 
             var totalLen = netStream.Read(readBuffer, 0, 1024 * 32);
-            var buffer = new Span<byte>(readBuffer);
             fixed(void* ptr = readBuffer) {
                 var readPtr = ptr;
                 while (totalLen > 0) {
@@ -274,6 +272,7 @@ namespace TrClient {
                         Console.ResetColor();
                     }
                 }
+                Send(new PlayerControls(default, default, default, default, default, default, new Vector2(1000,1000), default, default, default));
             }
 
             client.Close();

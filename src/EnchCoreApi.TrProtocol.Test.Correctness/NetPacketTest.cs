@@ -1,6 +1,7 @@
 using EnchCoreApi.TrProtocol.Models;
 using EnchCoreApi.TrProtocol.NetPackets;
 using EnchCoreApi.TrProtocol.NetPackets.Modules;
+using EnchCoreApi.TrProtocol.Test.Correctness;
 using System.Runtime.CompilerServices;
 
 namespace EnchCoreApi.TrProtocol.Test
@@ -18,12 +19,17 @@ namespace EnchCoreApi.TrProtocol.Test
             bw.Write((byte)hello.Type);
             bw.Write(hello.Version);
 
+            long packetContentLen;
+
             byte[] buffer2 = new byte[1024];
             fixed (void* ptr = buffer2)
             {
                 var p = ptr;
                 hello.WriteContent(ref p);
+                packetContentLen = (long)p - (long)ptr;
             }
+
+            Assert.AreEqual(packetContentLen, bw.BaseStream.Position);
 
             for (int i = 0; i < bw.BaseStream.Position; i++)
             {
@@ -53,6 +59,17 @@ namespace EnchCoreApi.TrProtocol.Test
             for (int i = 0; i < power.ExtraData.Length; i++)
             {
                 Assert.AreEqual(power.ExtraData[i], i);
+            }
+        }
+
+        [TestMethod]
+        public unsafe void TileSection()
+        {
+            var data = PacketData.tilesection1_3800_450_200_150;
+            fixed(void* ptr = data)
+            {
+                var p = Unsafe.Add<short>(ptr, 1);
+                var packet = NetPacket.ReadNetPacket(ref p, data.Length - 2, false);
             }
         }
     }

@@ -21,4 +21,19 @@
     <ProjectReference Include="..\EnchCoreApi.TrProtocol\EnchCoreApi.TrProtocol.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="PacketData.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PacketData.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="PacketData.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>PacketData.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

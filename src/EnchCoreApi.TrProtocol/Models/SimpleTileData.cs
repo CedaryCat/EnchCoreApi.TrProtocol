@@ -12,7 +12,7 @@ public struct SimpleTileData {
     public byte WallColor;
     [Condition(nameof(Flags1), 0)]
     public ushort TileType;
-    public bool FrameXYExist => Constants.tileFrameImportant[TileType];
+    public readonly bool FrameXYExist => Constants.tileFrameImportant[TileType];
     [Condition(nameof(Flags1), 0), Condition(nameof(FrameXYExist), true)]
     public short FrameX;
     [Condition(nameof(Flags1), 0), Condition(nameof(FrameXYExist), true)]

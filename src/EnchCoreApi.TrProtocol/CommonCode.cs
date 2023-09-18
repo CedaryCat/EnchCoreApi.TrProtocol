@@ -349,10 +349,14 @@ namespace EnchCoreApi.TrProtocol {
             return str;
         }
         public unsafe static void WriteString(ref void* ptr, string value) {
+            if (value.Length == 0)
+            {
+                Unsafe.Write(ptr, (byte)0);
+                ptr = Unsafe.Add<byte>(ptr, 1);
+                return;
+            }
             var ptr_current = ptr;
-
             var len = value.Length * sizeof(char) * 2;
-
             if (len <= 1024)
             {
                 fixed (char* char_ptr = value)
@@ -394,6 +398,12 @@ namespace EnchCoreApi.TrProtocol {
         }
         public unsafe static void WriteString2(ref void* ptr, string value)
         {
+            if (value.Length == 0)
+            {
+                Unsafe.Write(ptr, (byte)0);
+                ptr = Unsafe.Add<byte>(ptr, 1);
+                return;
+            }
             var ptr_current = ptr;
 
             var len = encoding.GetByteCount(value);
@@ -414,7 +424,14 @@ namespace EnchCoreApi.TrProtocol {
 
             ptr = Unsafe.Add<byte>(ptr_current, len);
         }
-        public unsafe static void WriteString3(ref void* ptr, string value) {
+        public unsafe static void WriteString3(ref void* ptr, string value)
+        {
+            if (value.Length == 0)
+            {
+                Unsafe.Write(ptr, (byte)0);
+                ptr = Unsafe.Add<byte>(ptr, 1);
+                return;
+            }
             var ptr_current = ptr;
             var len = value.Length * sizeof(char) * 2;
             var buffer = ArrayPool<byte>.Shared.Rent(len);

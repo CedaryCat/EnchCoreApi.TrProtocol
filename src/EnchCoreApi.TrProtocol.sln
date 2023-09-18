@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.Test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.Test.Correctness", "EnchCoreApi.TrProtocol.Test.Correctness\EnchCoreApi.TrProtocol.Test.Correctness.csproj", "{95E8C00E-23C0-470F-8E8F-7A305AEF1779}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrRouter", "TrRouter\TrRouter.csproj", "{B3522745-23D5-4D33-B728-4632E977A081}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +55,10 @@ Global
 		{95E8C00E-23C0-470F-8E8F-7A305AEF1779}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{95E8C00E-23C0-470F-8E8F-7A305AEF1779}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{95E8C00E-23C0-470F-8E8F-7A305AEF1779}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3522745-23D5-4D33-B728-4632E977A081}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3522745-23D5-4D33-B728-4632E977A081}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3522745-23D5-4D33-B728-4632E977A081}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3522745-23D5-4D33-B728-4632E977A081}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

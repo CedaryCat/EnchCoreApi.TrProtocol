@@ -4,6 +4,7 @@ using EnchCoreApi.TrProtocol.Models.TileEntities;
 using System;
 using System.Buffers;
 using System.Drawing;
+using System.IO;
 using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -11,6 +12,7 @@ using System.Runtime.InteropServices;
 
 namespace EnchCoreApi.TrProtocol.Models;
 
+//TODO: refactor 
 public partial class SectionData : ISerializableData {
     public int StartX;
     public int StartY;
@@ -33,12 +35,23 @@ public partial class SectionData : ISerializableData {
     public unsafe void ReadContent(ref void* ptr) {
         var compressedLen = Unsafe.Read<short>(Unsafe.Subtract<byte>(ptr, 3)) - 3;
 
-        var b = new byte[compressedLen];
-        Marshal.Copy((IntPtr)ptr, b, 0, compressedLen);
-        using var st = new MemoryStream(b);
+        using var st = new UnmanagedMemoryStream((byte*)ptr, compressedLen);
+        ptr = Unsafe.Add<byte>(ptr, compressedLen);
 
-        using var dst = new DeflateStream(st, CompressionMode.Decompress, true);
-        using var br = new BinaryReader(dst);
+        int decompressedLen = 0;
+        var arr = ArrayPool<byte>.Shared.Rent(1024 * 32);
+        using (var dst = new DeflateStream(st, CompressionMode.Decompress, true)) {
+            int rest = arr.Length;
+            int readed;
+            do {
+                readed = dst.Read(arr, decompressedLen, rest);
+                rest -= readed;
+                decompressedLen += readed;
+            }
+            while (readed > 0);
+        }
+        using var br = new BinaryReader(new MemoryStream(arr, 0, decompressedLen));
+
 
 
         StartX = br.ReadInt32();
@@ -49,13 +62,14 @@ public partial class SectionData : ISerializableData {
         var totalCount = Width * Height;
         var tilesCache = ArrayPool<ComplexTileData>.Shared.Rent(totalCount);
 
+        Console.WriteLine();
         int tileCurrentCount = 0;
         while (totalCount > 0) {
-            tilesCache[tileCurrentCount] = default;
             tilesCache[tileCurrentCount].DeserializeTile(br);
             totalCount -= tilesCache[tileCurrentCount].Count + 1;
             tileCurrentCount++;
         }
+        Console.WriteLine();
         Tiles = new ComplexTileData[tileCurrentCount];
         Array.Copy(tilesCache, Tiles, tileCurrentCount);
 
@@ -89,35 +103,27 @@ public partial class SectionData : ISerializableData {
         if (TileEntityCount > 1000)
             throw new Exception("Too many tile entities!");
 
-        //max size is DisplayDoll which take 91b
-        var tileEntityDataCache = ArrayPool<byte>.Shared.Rent(91 * TileEntityCount);
-        dst.Read(tileEntityDataCache);
-
-        var tileEntityDataBuffer = new Span<byte>(tileEntityDataCache);
-        fixed (void* ptr_entity_origi = tileEntityDataBuffer) {
-            var ptr_entity = ptr_entity_origi;
+        fixed (void* p = arr) {
+            var ptr_entity = Unsafe.Add<byte>(p, (int)br.BaseStream.Position);
             TileEntities = new TileEntity[TileEntityCount];
             for (int i = 0; i < TileEntityCount; i++) {
                 TileEntities[i] = TileEntity.ReadTileEntity(ref ptr_entity);
             }
         }
 
-        
 
-        ArrayPool<byte>.Shared.Return(tileEntityDataCache);
-        ptr = Unsafe.Add<byte>(ptr, compressedLen);
+
+        ArrayPool<byte>.Shared.Return(arr);
     }
 
     public unsafe void WriteContent(ref void* ptr) {
-        using var compressed = new MemoryStream();
-        using var dst = new DeflateStream(compressed, CompressionLevel.SmallestSize, true);
-        using var bw = new BinaryWriter(dst);
+        var buffer = ArrayPool<byte>.Shared.Rent(1024 * 32);
+        using var bw = new BinaryWriter(new MemoryStream(buffer));
 
         bw.Write(StartX);
         bw.Write(StartY);
         bw.Write(Width);
         bw.Write(Height);
-
         for (int i = 0; i < Tiles.Length; i++) {
             Tiles[i].SerializeTile(bw);
         }
@@ -137,27 +143,26 @@ public partial class SectionData : ISerializableData {
             bw.Write(sign.ID);
             bw.Write(sign.TileX);
             bw.Write(sign.TileY);
-            bw.Write(sign.Text);
+            bw.Write(sign.Text ?? "");
         }
 
-        bw.Write((short)TileEntities.Length);
-
-
-        var tileEntityDataCache = ArrayPool<byte>.Shared.Rent(91);
-        var tileEntityDataBuffer = new Span<byte>(tileEntityDataCache);
-
-        fixed (void* ptr_entity_origi = tileEntityDataBuffer) {
-            var ptr_entity = ptr_entity_origi;
-            for (int i = 0; i < TileEntityCount; i++) {
-                TileEntities[i].WriteContent(ref ptr_entity);
-                dst.Write(tileEntityDataCache, 0, (int)((long)ptr_entity - (long)ptr_entity_origi));
+        bw.Write(TileEntityCount);
+        if (TileEntityCount > 0) {
+            fixed (void* p = buffer) {
+                var ptr_entity = Unsafe.Add<byte>(p, (int)bw.BaseStream.Position);
+                for (int i = 0; i < TileEntityCount; i++) {
+                    TileEntities[i].WriteContent(ref ptr_entity);
+                }
+                bw.BaseStream.Position = ((long)ptr_entity - (long)p);
             }
         }
 
-        ArrayPool<byte>.Shared.Return(tileEntityDataCache);
 
-        using var ust = new UnmanagedMemoryStream((byte*)ptr, compressed.Position, compressed.Position, FileAccess.Write);
-        compressed.CopyTo(ust);
+        using var ust = new UnmanagedMemoryStream((byte*)ptr, 1024 * 32, 1024 * 32, FileAccess.Write);
+        var dst = new DeflateStream(ust, CompressionLevel.SmallestSize, leaveOpen: true);
+        dst.Write(buffer, 0, (int)bw.BaseStream.Position);
+        dst.Dispose();
         ptr = ust.PositionPointer;
+        ArrayPool<byte>.Shared.Return(buffer);
     }
 }

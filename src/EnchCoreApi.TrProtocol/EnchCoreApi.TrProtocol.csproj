@@ -5,9 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <AssemblyVersion>1.0.1.14</AssemblyVersion>
-    <FileVersion>1.0.1.14</FileVersion>
-	<Version>1.0.2-rc</Version>
+    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+    <FileVersion>1.0.3.0</FileVersion>
+	<Version>1.0.3</Version>
 	<PackageReleaseNotes>Initial 1.4.4.9 support</PackageReleaseNotes>
 	<PackageLicenseFile>COPYING.txt</PackageLicenseFile>
 	<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>

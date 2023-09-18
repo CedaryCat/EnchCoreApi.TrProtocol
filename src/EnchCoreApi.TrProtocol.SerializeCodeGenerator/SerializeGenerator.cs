@@ -414,7 +414,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                         true),
                                                     packet.TypeDeclaration.GetLocation()));
                                         }
-                                        source.WriteLine($"public bool {nameof(ISideDependent.IsServerSide)} {{ get; protected set; }}");
+                                        source.WriteLine($"public bool {nameof(ISideDependent.IsServerSide)} {{ get; set; }}");
                                     }
 
                                     if (packet.HasExtraData)
@@ -1015,14 +1015,12 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                         }
                                                         if (m.IsEnumRound)
                                                         {
-                                                            mTypeStr = m.EnumType.underlyingType.Name;
+                                                            mTypeStr = m.EnumType.underlyingType.GetPredifinedName();
                                                         }
 
                                                         var deferredMemberWrite = source.DeferredWrite((source, _, _) => {
                                                             switch (mTypeStr)
                                                             {
-                                                                case "bool":
-                                                                case nameof(Boolean):
                                                                 case "byte":
                                                                 case nameof(Byte):
                                                                 case "sbyte":
@@ -1055,6 +1053,12 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                     goto nextMember;
                                                                 case "object":
                                                                 case nameof(Object):
+                                                                    goto nextMember;
+                                                                case "bool":
+                                                                case nameof(Boolean):
+                                                                    source.WriteLine($"Unsafe.Write(ptr_current, {memberAccess} ? (byte)1 : (byte)0);");
+                                                                    source.WriteLine($"ptr_current = Unsafe.Add<byte>(ptr_current, 1);");
+                                                                    source.WriteLine();
                                                                     goto nextMember;
                                                                 case "string":
                                                                 case nameof(String):
@@ -1369,13 +1373,11 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                         }
                                                         if (m.IsEnumRound)
                                                         {
-                                                            mTypeStr = m.EnumType.underlyingType.Name;
+                                                            mTypeStr = m.EnumType.underlyingType.GetPredifinedName();
                                                         }
                                                         var deferredMemberWrite = source.DeferredWrite((source, _, _) => {
                                                             switch (mTypeStr)
                                                             {
-                                                                case "bool":
-                                                                case nameof(Boolean):
                                                                 case "byte":
                                                                 case nameof(Byte):
                                                                 case "sbyte":
@@ -1404,6 +1406,12 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                     goto nextMember;
                                                                 case "object":
                                                                 case nameof(Object):
+                                                                    goto nextMember;
+                                                                case "bool":
+                                                                case nameof(Boolean):
+                                                                    source.WriteLine($"{memberAccess} = Unsafe.Read<byte>(ptr_current) != 0;");
+                                                                    source.WriteLine($"ptr_current = Unsafe.Add<byte>(ptr_current, 1);");
+                                                                    source.WriteLine();
                                                                     goto nextMember;
                                                                 case "string":
                                                                 case nameof(String):
