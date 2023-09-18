@@ -195,12 +195,9 @@ fixed (void* ptr = SendBuffer) {
     var ptr_current = Unsafe.Add<short>(ptr, 1); 
     //write packet
     packet.WriteContent(ref ptr_current); 
-    //get the packet content size
+    //get the packet total size (including 2 bytes of packet header)
     var size_short = (short)((long)ptr_current - (long)ptr); 
-
-    //add packet header size to total size
-    size_short += 2; 
-    //write packet header value (total size)
+    //write packet header value
     Unsafe.Write(ptr, size_short); 
 
     //send packet bytes
