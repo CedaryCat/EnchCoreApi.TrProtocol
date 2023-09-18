@@ -134,14 +134,14 @@ public partial class CombatTextInt : NetPacket {
 </table>
 
 ## **Note**
-### Serizialize
+### Serialize
 
 * Under normal circumstances, the protocol library does not need to know the packet header in serialization. 
 Therefore, when using **'NetPacket.WriteContent (ref void\*)'**, the user only needs to pass in the pointer to the binary data that represents Type. 
 This is the pointer at index=2 in the diagram table. 
 The protocol library then writes the content of the packet to the pointer position and adds the offset that was written back to the ref void* pointer.
 * So if you want to send a complete packet, your code should probarbly be written like this: [click here](#S2C_CombatTextInt)
-### Deseriziable
+### Deserialize
 * In deserialization, however, there is a notable problem. In Terraria, some packets need to be resolved based on the state of the game, 
 such as the **'NetCreativePowersModule'** packet. This packet is used to synchronize the creative powers of the players in the game. In Terraria 
 server, it calls the function **'APerPlayerTogglePower.Deserialize_SyncEveryone'**, which has the following code:
@@ -210,7 +210,7 @@ fixed (void* ptr = SendBuffer) {
 # Profermance [![GitHub Workflow](https://img.shields.io/badge/Source-Github-d021d6?style=flat&logo=GitHub)](https://github.com/CedaryCat/EnchCoreApi.TrProtocol/blob/master/src/EnchCoreApi.TrProtocol.Test.Performance/PacketPerformanceTest.cs) 
 ## Take the packet **WorldData (ID=7)** as an example
 * **Note:** skip offset0 because you already know what kind of package it is.
-### Serizialize 
+### Serialize 
 ```
 [Benchmark] public unsafe void Test_Unsafe() {
     fixed (void* ptr = buffer) {
@@ -243,7 +243,7 @@ fixed (void* ptr = SendBuffer) {
 | Test_ReuseBinaryWriter | 326.54 ns | 0.950 ns | 0.742 ns |    2 |      - |         - |
 
 ---
-### Deserizialize
+### Deserialize
 ```
 [Benchmark] public unsafe void Test_Unsafe() {
     fixed (void* ptr = buffer) {
