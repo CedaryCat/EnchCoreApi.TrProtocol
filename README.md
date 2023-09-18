@@ -19,9 +19,9 @@ appreciate their work and contribution. You can find their original project at [
 # Installation [![EnchCoreApi.TrProtocol](https://img.shields.io/nuget/vpre/EnchCoreApi.TrProtocol?label=EnchCoreApi.TrProtocol)](https://www.nuget.org/packages/EnchCoreApi.TrProtocol/)
 * You can find and install it in nuget package manager, or you can install it directly from the nuget command line
 ```
-PM> NuGet\Install-Package EnchCoreApi.TrProtocol -Version 1.0.2-beta1
+PM> NuGet\Install-Package EnchCoreApi.TrProtocol -Version 1.0.3
 ```
-* Please use version 1.0.2-beta1 because 1.0.2-alpha1 or earlier version may resolves a bug that caused some fields to be serialized incorrectly due to missing conditionals.
+* Please use version 1.0.2-beta1 or later version because 1.0.2-alpha1 or earlier version may resolves a bug that caused some fields to be serialized incorrectly due to missing conditionals.
 # Usage
 To use EnchCoreApi.TrProtocol, you need to add a reference to the namespace EnchCoreApi.TrProtocol, EnchCoreApi.TrProtocol.NetPackets, EnchCoreApi.TrProtocol.Models .etc 
 ```csharp
