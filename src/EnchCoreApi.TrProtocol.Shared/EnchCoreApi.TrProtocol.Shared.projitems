@@ -11,12 +11,15 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\ArraySizeAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\C2SOnlyAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\CompressAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\ConditionArrayAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\InitDefaultValueAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\InitNullableAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\S2COnlyAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Exceptions\ArraySerializableIndicatorLackingException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Interfaces\IExtraData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Interfaces\ILengthDependent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Interfaces\IRepeatElement.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Interfaces\ISerializableData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Interfaces\ISideDependent.cs" />
     <Compile Include="..\EnchCoreApi.TrProtocol.Shared\Attributes\ConditionGreaterThanAttribute.cs" />

@@ -1,10 +1,9 @@
-﻿using EnchCoreApi.TrProtocol.Interfaces;
-using Microsoft.VisualBasic;
-using System.Runtime.InteropServices;
-using Terraria;
+﻿using EnchCoreApi.TrProtocol.Attributes;
+using EnchCoreApi.TrProtocol.Interfaces;
+using System.Runtime.CompilerServices;
 
 namespace EnchCoreApi.TrProtocol.Models {
-    public struct ComplexTileData
+    public partial struct ComplexTileData : IRepeatElement<short>
     {
         public ComplexTileFlags1 Flags1;
         public ComplexTileFlags2 Flags2;
@@ -19,173 +18,139 @@ namespace EnchCoreApi.TrProtocol.Models {
         public byte WallColor;
         public byte Liquid;
 
-        public short Count;
+        public short RepeatCount { get; set; }
 
-        public void DeserializeTile(BinaryReader br) {
-            this = default;
+        public unsafe void ReadContent(ref void* ptr) {
+            var ptr_current = ptr;
 
-            //int readedSize = 1;
-
-            Flags1 = br.ReadByte();
-            // if HasFlag2 flag is true
-            if (Flags1.HasFlags2)
-            {
-                Flags2 = br.ReadByte();
-                //readedSize++;
-            }
-            if (Flags2.HasFlags3)
-            {
-                Flags3 = br.ReadByte();
-                //readedSize++;
-            }
-            if (Flags3.HasFlags4)
-            {
-                Flags4 = br.ReadByte();
-                //readedSize++;
-            }
-
-            // if HasTile flag is true
-            if (Flags1.TileActive)
-            {
-                // read a byte when this flag is false
-                TileType = Flags1.TileTypeIs2Bytes ? br.ReadUInt16() : br.ReadByte();
-
-                //readedSize++;
-                //if (Flags1[5]) //readedSize++;
-
-                if (Constants.tileFrameImportant[TileType]) {
-                    FrameX = br.ReadInt16();
-                    FrameY = br.ReadInt16();
-
-                    //readedSize += 4;
-                }
-
-                // if HasTileColor flag is true
-                if (Flags3.TilePrinted) {
-                    TileColor = br.ReadByte();
-                    //readedSize++;
-                }
-            }
-
-            // if HasWall flag is true
-            if (Flags1.WallActive) {
-                //readedSize++;
-                WallType = br.ReadByte();
-                // if HasWallColor flag is true
-                if (Flags3.WallPrinted) {
-                    //readedSize++;
-                    WallColor = br.ReadByte();
-                }
-            }
-
-            // if Liquid1 or Liquid2 flag is true
-            if (Flags1.Liquid != LiquidMode.None) {
-                //readedSize++;
-                Liquid = br.ReadByte();
-            }
-
-            // read the additional byte if wall type is big
-            if (Flags3.WallTypeIs2Bytes) {
-                //readedSize++;
-                WallType = (ushort)((br.ReadByte() << 8) | WallType);
-            }
-
-            // if HasCountByte or HasCountInt16 flag is true
-            if (Flags1.HasSameTile_HighBits) {
-                //readedSize += 2;
-                Count = br.ReadInt16();
-            }
-            else if (Flags1.HasSameTile) {
-                //readedSize++;
-                Count = br.ReadByte();
-            }
-            else {
-                Count = 0;
-            }
-            //Console.Write($"{Count + 1}/{readedSize},");
-        }
-
-        public void SerializeTile(BinaryWriter bw) {
-
-            //int writedSize = 1;
-            bw.Write(Flags1);
-            // if HasFlag2 flag is true
+            Flags1 = Unsafe.Read<ComplexTileFlags1>(ptr_current);
+            ptr_current = Unsafe.Add<ComplexTileFlags1>(ptr_current, 1);
             if (Flags1.HasFlags2) {
-                bw.Write(Flags2);
-                //writedSize++;
+                Flags2 = Unsafe.Read<ComplexTileFlags2>(ptr_current);
+                ptr_current = Unsafe.Add<ComplexTileFlags2>(ptr_current, 1);
             }
-
-            // if HasFlag3 flag is true
-            if (Flags2.HasFlags3) { 
-                bw.Write(Flags3);
-                //writedSize++;
+            if (Flags2.HasFlags3) {
+                Flags3 = Unsafe.Read<ComplexTileFlags3>(ptr_current);
+                ptr_current = Unsafe.Add<ComplexTileFlags3>(ptr_current, 1);
             }
-
-            // if HasFlag3 flag is true
             if (Flags3.HasFlags4) {
-                bw.Write(Flags4);
-                //writedSize++;
+                Flags4 = Unsafe.Read<ComplexTileFlags4>(ptr_current);
+                ptr_current = Unsafe.Add<ComplexTileFlags4>(ptr_current, 1);
             }
-
-            // if HasTile flag is true
             if (Flags1.TileActive) {
-                // write a byte when this flag is false
                 if (Flags1.TileTypeIs2Bytes) {
-                    bw.Write(TileType);
-                    //writedSize += 2;
+                    TileType = Unsafe.Read<ushort>(ptr_current);
+                    ptr_current = Unsafe.Add<ushort>(ptr_current, 1);
                 }
                 else {
-                    bw.Write((byte)TileType);
-                    //writedSize++;
+                    TileType = Unsafe.Read<byte>(ptr_current);
+                    ptr_current = Unsafe.Add<byte>(ptr_current, 1);
                 }
-
-
                 if (Constants.tileFrameImportant[TileType]) {
-                    bw.Write(FrameX);
-                    bw.Write(FrameY);
-                    //writedSize += 4;
+                    FrameX = Unsafe.Read<short>(ptr_current);
+                    ptr_current = Unsafe.Add<short>(ptr_current, 1);
+                    FrameY = Unsafe.Read<short>(ptr_current);
+                    ptr_current = Unsafe.Add<short>(ptr_current, 1);
                 }
-
-                // if HasTileColor flag is true
                 if (Flags3.TilePrinted) {
-                    bw.Write(TileColor);
-                    //writedSize++;
+                    TileColor = Unsafe.Read<byte>(ptr_current);
+                    ptr_current = Unsafe.Add<byte>(ptr_current, 1);
                 }
             }
-
-            // if HasWall flag is true
             if (Flags1.WallActive) {
-                bw.Write((byte)WallType);
-                //writedSize++;
-                // if HasWallColor flag is true
+                WallType = Unsafe.Read<byte>(ptr_current);
+                ptr_current = Unsafe.Add<byte>(ptr_current, 1);
                 if (Flags3.WallPrinted) {
-                    bw.Write(WallColor);
-                    //writedSize++;
+                    WallColor = Unsafe.Read<byte>(ptr_current);
+                    ptr_current = Unsafe.Add<byte>(ptr_current, 1);
                 }
             }
-
-            // if Liquid1 or Liquid2 flag is true
             if (Flags1.Liquid != LiquidMode.None) {
-                bw.Write(Liquid);
-                //writedSize++;
+                Liquid = Unsafe.Read<byte>(ptr_current);
+                ptr_current = Unsafe.Add<byte>(ptr_current, 1);
             }
-
-            // write an additional byte if wall type is greater than byte's max
-            if (Flags1.WallActive && Flags3.WallTypeIs2Bytes) {
-                bw.Write((byte)(WallType >> 8));
-                //writedSize++;
+            if (Flags3.WallTypeIs2Bytes) {
+                WallType = (ushort)((Unsafe.Read<byte>(ptr_current) << 8) | WallType);
+                ptr_current = Unsafe.Add<byte>(ptr_current, 1);
             }
-
             if (Flags1.HasSameTile_HighBits) {
-                bw.Write(Count);
-                //writedSize += 2;
+                RepeatCount = Unsafe.Read<short>(ptr_current);
+                ptr_current = Unsafe.Add<short>(ptr_current, 1);
             }
             else if (Flags1.HasSameTile) {
-                bw.Write((byte)Count);
-                //writedSize++;
+                RepeatCount = Unsafe.Read<byte>(ptr_current);
+                ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+            }
+            else {
+                RepeatCount = 0;
             }
 
-            //Console.Write($"{Count + 1}/{writedSize},");
+            ptr = ptr_current;
+        }
+
+        public unsafe void WriteContent(ref void* ptr) {
+            var ptr_current = ptr;
+
+            Unsafe.Write(ptr_current, Flags1);
+            ptr_current = Unsafe.Add<ComplexTileFlags1>(ptr_current, 1);
+            if (Flags1.HasFlags2) {
+                Unsafe.Write(ptr_current, Flags2);
+                ptr_current = Unsafe.Add<ComplexTileFlags2>(ptr_current, 1);
+            }
+            if (Flags2.HasFlags3) {
+                Unsafe.Write(ptr_current, Flags3);
+                ptr_current = Unsafe.Add<ComplexTileFlags3>(ptr_current, 1);
+            }
+            if (Flags3.HasFlags4) {
+                Unsafe.Write(ptr_current, Flags4);
+                ptr_current = Unsafe.Add<ComplexTileFlags4>(ptr_current, 1);
+            }
+            if (Flags1.TileActive) {
+                if (Flags1.TileTypeIs2Bytes) {
+                    Unsafe.Write(ptr_current, TileType);
+                    ptr_current = Unsafe.Add<ushort>(ptr_current, 1);
+                }
+                else {
+                    Unsafe.Write(ptr_current, (byte)TileType);
+                    ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+                }
+                if (Constants.tileFrameImportant[TileType]) {
+                    Unsafe.Write(ptr_current, FrameX);
+                    ptr_current = Unsafe.Add<short>(ptr_current, 1);
+                    Unsafe.Write(ptr_current, FrameY);
+                    ptr_current = Unsafe.Add<short>(ptr_current, 1);
+                }
+                if (Flags3.TilePrinted) {
+                    Unsafe.Write(ptr_current, TileColor);
+                    ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+                }
+            }
+            if (Flags1.WallActive) {
+                Unsafe.Write(ptr_current, (byte)WallType);
+                ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+                if (Flags3.WallPrinted) {
+                    Unsafe.Write(ptr_current, WallColor);
+                    ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+                }
+            }
+            if (Flags1.Liquid != LiquidMode.None) {
+                Unsafe.Write(ptr_current, Liquid);
+                ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+            }
+            if (Flags1.WallActive && Flags3.WallTypeIs2Bytes) {
+                Unsafe.Write(ptr_current, (byte)(WallType >> 8));
+                ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+            }
+            if (Flags1.HasSameTile_HighBits) {
+                Unsafe.Write(ptr_current, RepeatCount);
+                ptr_current = Unsafe.Add<short>(ptr_current, 1);
+            }
+            else if (Flags1.HasSameTile) {
+                Unsafe.Write(ptr_current, (byte)RepeatCount);
+                ptr_current = Unsafe.Add<byte>(ptr_current, 1);
+            }
+
+            ptr = ptr_current;
         }
     }
 }

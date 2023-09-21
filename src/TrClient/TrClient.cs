@@ -165,12 +165,12 @@ namespace TrClient {
         //}
         //private class Handlers {
         //    protected readonly List<Delegate?> handlers = new (180);
-        //    protected static int Count;
+        //    protected static int RepeatCount;
         //    public void Register<TPacket>(Action<TPacket> handler) where TPacket : NetPacket {
 
         //        var id = HandlersInternal<TPacket>.ID;
 
-        //        while (handlers.Count <= id) {
+        //        while (handlers.RepeatCount <= id) {
         //            handlers.Add(null);
         //        }
 
@@ -188,7 +188,7 @@ namespace TrClient {
         //    private sealed class HandlersInternal<TPacket> : Handlers where TPacket : NetPacket {
         //        public static readonly int ID;
         //        static HandlersInternal() {
-        //            ID = Count++;
+        //            ID = RepeatCount++;
         //        }
         //    }
         //}

@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -11,6 +12,8 @@ namespace EnchCoreApi.TrProtocol {
         static CommonCode() {
             FastAllocateString = (delegate*<int, string>)typeof(string).GetRuntimeMethods().First(m => m.Name == "FastAllocateString").MethodHandle.GetFunctionPointer();
         }
+
+        #region String
         public unsafe static string ReadString(Span<byte> buffer, ref int index) {
             fixed (byte* ptr = buffer) {
                 using var s = new UnmanagedMemoryStream(ptr, buffer.Length - index);
@@ -452,5 +455,27 @@ namespace EnchCoreApi.TrProtocol {
             ArrayPool<byte>.Shared.Return(buffer);
             ptr = Unsafe.Add<byte>(ptr_current, len);
         }
+        #endregion
+
+        #region Compression
+        public unsafe static void ReadDecompressedData(void* source, ref void* destination, int compressedDataLength) {
+            using var st = new UnmanagedMemoryStream((byte*)source, compressedDataLength, compressedDataLength, FileAccess.Read);
+            using (var dst = new DeflateStream(st, CompressionMode.Decompress, true)) {
+                int readed;
+                do {
+                    readed = dst.Read(new Span<byte>(destination, 1024 * 32));
+                    destination = Unsafe.Add<byte>(destination, readed);
+                }
+                while (readed > 0);
+            }
+        }
+        public unsafe static void WriteCompressedData(void* source, ref void* destination, int rawDataLength, CompressionLevel level) {
+            using var st = new UnmanagedMemoryStream((byte*)destination, 1024 * 32, 1024 * 32, FileAccess.Write);
+            using (var dst = new DeflateStream(st, level, true)) {
+                dst.Write(new Span<byte>(source, rawDataLength));
+            }
+            destination = st.PositionPointer;
+        }
+        #endregion
     }
 }

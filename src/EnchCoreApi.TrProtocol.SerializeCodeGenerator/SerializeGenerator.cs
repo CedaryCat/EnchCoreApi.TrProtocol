@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Text;
 using Terraria;
 
@@ -31,6 +32,8 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
             public bool IsAbstract;
             public bool HasExtraData;
             public bool SideDependent;
+            public bool LengthDependent;
+            public (string? compressLevel, string? bufferSize) CompressData;
             public readonly string TypeName;
             public readonly IReadOnlyList<MemberDataAccessRound> Members;
         }
@@ -192,6 +195,27 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                             packet.SideDependent = true;
                         }
 
+                        if (typeSym.AllInterfaces.Any(t => t.Name == nameof(ILengthDependent))) {
+                            packet.LengthDependent = true;
+                        }
+
+                        var compressAtt = packet.TypeDeclaration.AttributeLists.SelectMany(list => list.Attributes).FirstOrDefault(a => a.AttributeMatch<CompressAttribute>());
+                        if (compressAtt is not null) {
+                            if (!packet.LengthDependent) {
+                                throw new DiagnosticException(
+                                    Diagnostic.Create(
+                                        new DiagnosticDescriptor(
+                                            "SCG30",
+                                            $"Invaild type definition",
+                                            $"'{nameof(CompressAttribute)}' only use on types or structs implymented interface '{nameof(ILengthDependent)}'",
+                                            "",
+                                            DiagnosticSeverity.Error,
+                                            true),
+                                       compressAtt.GetLocation()));
+                            }
+                            packet.CompressData = (compressAtt.ArgumentList?.Arguments[0].Expression?.ToString(), compressAtt.ArgumentList?.Arguments[1].Expression?.ToString());
+                        }
+
                         var packetAutoSeri = typeSym.AllInterfaces.Any(t => t.Name == nameof(IAutoSerializableData));
                         var packetManualSeri = !packetAutoSeri && typeSym.AllInterfaces.Any(t => t.Name == nameof(ISerializableData));
 
@@ -204,7 +228,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                         string identityProp;
                         PropertyDeclarationSyntax idMember;
 
-                        if (typeSym.BaseType is not null && typeSym.BaseType.Name != "Object") {
+                        if (typeSym.IsReferenceType && typeSym.BaseType is not null && typeSym.BaseType.Name != "Object") {
 
                             basePacketAttrData = typeSym.BaseType.GetAttributes().FirstOrDefault(a => a.AttributeClass?.Name == nameof(AbstractModelAttribute));
 
@@ -393,7 +417,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                             source.WriteLine();
                             source.Write($"namespace {fullNamespace} ");
                             source.BlockWrite((source) => {
-                                source.Write($"public unsafe partial class {packet.TypeName} ");
+                                source.Write($"public unsafe partial {(typeSym.IsValueType ? "struct" : "class")} {packet.TypeName} ");
                                 source.BlockWrite((source) => {
 
                                     #region Manage type constructors and special behavior
@@ -417,22 +441,24 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                         source.WriteLine($"public bool {nameof(ISideDependent.IsServerSide)} {{ get; set; }}");
                                     }
 
-                                    if (packet.HasExtraData)
+                                    if (packet.LengthDependent)
                                     {
-                                        source.WriteLine($"public byte[] {nameof(IExtraData.ExtraData)} {{ get; set; }} = Array.Empty<byte>();");
-
-                                        source.Write($"public {packet.TypeName}(ref void* ptr, int restContentSize{(packet.SideDependent ? ", bool isServerSide" : "")})");
+                                        if (packet.HasExtraData) {
+                                            source.WriteLine($"public byte[] {nameof(IExtraData.ExtraData)} {{ get; set; }} = Array.Empty<byte>();");
+                                        }
+                                        source.WriteLine("/// <summary>");
+                                        source.WriteLine("/// use ptr_end instead restContentSize");
+                                        source.WriteLine("/// </summary>");
+                                        source.WriteLine($"[Obsolete]");
+                                        source.WriteLine($"public {packet.TypeName}(ref void* ptr, int restContentSize{(packet.SideDependent ? ", bool isServerSide" : "")}) : this(ref ptr, Unsafe.Add<byte>(ptr, restContentSize){(packet.SideDependent ? ", isServerSide" : "")}) {{ }}");
+                                        source.WriteLine();
+                                        source.Write($"public {packet.TypeName}(ref void* ptr, void* ptr_end{(packet.SideDependent ? ", bool isServerSide" : "")})");
                                         source.BlockWrite((source) => {
                                             if (packet.SideDependent)
                                             {
                                                 source.WriteLine($"{nameof(ISideDependent.IsServerSide)} = isServerSide;");
                                             }
-                                            source.WriteLine("var ptr_end = Unsafe.Add<byte>(ptr, restContentSize);");
-                                            source.WriteLine("ReadContent(ref ptr);");
-                                            source.WriteLine("restContentSize = (int)((long)ptr_end - (long)ptr);");
-                                            source.WriteLine($"{nameof(IExtraData.ExtraData)} = new byte[restContentSize];");
-                                            source.WriteLine($"Marshal.Copy((IntPtr)ptr, {nameof(IExtraData.ExtraData)}, 0, restContentSize);");
-                                            source.WriteLine("ptr = ptr_end;");
+                                            source.WriteLine("ReadContent(ref ptr, ptr_end);");
                                         });
                                     }
                                     else
@@ -931,7 +957,6 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                         return false;
                                     }))
                                     {
-
                                         source.Write($"public unsafe {(packet.IsSubmodel ? "override " : "")}void WriteContent(ref void* ptr) ");
                                         source.BlockWrite((source) => {
                                             source.WriteLine("var ptr_current = ptr;");
@@ -961,7 +986,6 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                     source.WriteLine();
                                                 }
                                             }
-
                                             int indexID = 0;
                                             void UnfoldMembers_Seri(INamedTypeSymbol typeSym, IEnumerable<(MemberDataAccessRound m, string? parant_var)> memberAccesses)
                                             {
@@ -1089,8 +1113,9 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                     source.WriteLine();
                                                                     goto nextMember;
                                                                 default:
-                                                                    if (mType is ArrayTypeSyntax arr)
-                                                                    {
+                                                                    if (mType is ArrayTypeSyntax arr) {
+
+                                                                        var eleSym = ((IArrayTypeSymbol)memberTypeSym).ElementType;
 
                                                                         if (parant_var is null && m.IsConditional && !m.IsArrayRound && !m.IsEnumRound)
                                                                         {
@@ -1143,68 +1168,88 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                                     m.MemberName,
                                                                                     packet.TypeName));
                                                                         }
+                                                                        bool elementRepeating = eleSym.AllInterfaces.Any(i => i.Name == nameof(IRepeatElement<int>));
+                                                                        if (elementRepeating && arr.RankSpecifiers[0].Rank != 1) {
+                                                                            throw new DiagnosticException(
+                                                                                Diagnostic.Create(
+                                                                                    new DiagnosticDescriptor(
+                                                                                        "SCG35",
+                                                                                        "Array rank conflict",
+                                                                                        $"Arrays that implement '{nameof(IRepeatElement<int>)}' must be one-dimensional",
+                                                                                        "",
+                                                                                        DiagnosticSeverity.Error,
+                                                                                        true),
+                                                                                    m.MemberDeclaration.GetLocation()));
+                                                                        }
 
-                                                                        string[] indexNames = new string[indexExps.Length];
-                                                                        for (int i = 0; i < indexNames.Length; i++)
-                                                                        {
+                                                                        if (elementRepeating) {
                                                                             indexID += 1;
-                                                                            indexNames[i] = $"_g_index_{indexID}";
+                                                                            source.Write($"for (int _g_index_{indexID} = 0; _g_index_{indexID} < {memberAccess}.Length; _g_index_{indexID}++) ");
+                                                                            source.BlockWrite((source) => {
+                                                                                m.EnterArrayRound(new string[] { $"_g_index_{indexID}" });
+                                                                                UnfoldMembers_Seri(typeSym, new (MemberDataAccessRound, string?)[] {
+                                                                                    (m, parant_var)
+                                                                                });
+                                                                                m.ExitArrayRound();
+                                                                            });
+                                                                            source.WriteLine();
                                                                         }
-
-                                                                        var deferred = source.DeferredWrite<DeferredWriteAction?>((source, _, _) => {
-                                                                            m.EnterArrayRound(indexNames);
-                                                                            UnfoldMembers_Seri(typeSym, new (MemberDataAccessRound, string?)[] {
-                                                                            (m, parant_var)
-                                                                        });
-                                                                            m.ExitArrayRound();
-                                                                        }, null);
-
-                                                                        for (int i = indexExps.Length - 1; i >= 0; i--)
-                                                                        {
-                                                                            var indexExp = indexExps[i]; object? size = null;
-                                                                            if (indexExp is LiteralExpressionSyntax lit)
-                                                                            {
-                                                                                var text = lit.Token.Text;
-                                                                                if (text.StartsWith("\"") && text.EndsWith("\""))
-                                                                                {
-                                                                                    size = (parant_var is null ? "" : $"{parant_var}.") + text.Substring(1, text.Length - 2);
-                                                                                }
-                                                                                else if (ushort.TryParse(text, out var numSize))
-                                                                                {
-                                                                                    size = numSize;
-                                                                                }
-                                                                            }
-                                                                            else if (indexExp is InvocationExpressionSyntax inv)
-                                                                            {
-                                                                                if (inv.Expression.ToString() == "nameof")
-                                                                                {
-                                                                                    size = (parant_var is null ? "" : $"{parant_var}.") + inv.ArgumentList.Arguments.First().Expression;
-                                                                                }
+                                                                        else {
+                                                                            string[] indexNames = new string[indexExps.Length];
+                                                                            for (int i = 0; i < indexNames.Length; i++) {
+                                                                                indexID += 1;
+                                                                                indexNames[i] = $"_g_index_{indexID}";
                                                                             }
 
-                                                                            if (size == null)
-                                                                            {
-                                                                                throw new DiagnosticException(
-                                                                                    Diagnostic.Create(
-                                                                                        new DiagnosticDescriptor(
-                                                                                            "SCG20",
-                                                                                            "Array rank size invaild",
-                                                                                            "given size of array rank is invaild, index '{0}' of '{1}' at netpacket '{2}'",
-                                                                                            "",
-                                                                                            DiagnosticSeverity.Error,
-                                                                                            true),
-                                                                                        m.MemberDeclaration.GetLocation(),
-                                                                                        i,
-                                                                                        m.MemberName,
-                                                                                        packet.TypeName));
+                                                                            var deferred = source.DeferredWrite<DeferredWriteAction?>((source, _, _) => {
+                                                                                m.EnterArrayRound(indexNames);
+                                                                                UnfoldMembers_Seri(typeSym, new (MemberDataAccessRound, string?)[] {
+                                                                                    (m, parant_var)
+                                                                                });
+                                                                                m.ExitArrayRound();
+                                                                            }, null);
+
+                                                                            for (int i = indexExps.Length - 1; i >= 0; i--) {
+                                                                                var indexExp = indexExps[i]; object? size = null;
+                                                                                if (indexExp is LiteralExpressionSyntax lit) {
+                                                                                    var text = lit.Token.Text;
+                                                                                    if (text.StartsWith("\"") && text.EndsWith("\"")) {
+                                                                                        size = (parant_var is null ? "" : $"{parant_var}.") + text.Substring(1, text.Length - 2);
+                                                                                    }
+                                                                                    else if (ushort.TryParse(text, out var numSize)) {
+                                                                                        size = numSize;
+                                                                                    }
+                                                                                }
+                                                                                else if (indexExp is InvocationExpressionSyntax inv) {
+                                                                                    if (inv.Expression.ToString() == "nameof") {
+                                                                                        size = (parant_var is null ? "" : $"{parant_var}.") + inv.ArgumentList.Arguments.First().Expression;
+                                                                                    }
+                                                                                }
+
+                                                                                if (size == null) {
+                                                                                    throw new DiagnosticException(
+                                                                                        Diagnostic.Create(
+                                                                                            new DiagnosticDescriptor(
+                                                                                                "SCG20",
+                                                                                                "Array rank size invaild",
+                                                                                                "given size of array rank is invaild, index '{0}' of '{1}' at netpacket '{2}'",
+                                                                                                "",
+                                                                                                DiagnosticSeverity.Error,
+                                                                                                true),
+                                                                                            m.MemberDeclaration.GetLocation(),
+                                                                                            i,
+                                                                                            m.MemberName,
+                                                                                            packet.TypeName));
+                                                                                }
+                                                                                var indexName = indexNames[i];
+                                                                                deferred = source.DeferredWrite((source, innerDeferred, _) => {
+                                                                                    source.Write($"for (int {indexName} = 0; {indexName} < {size}; {indexName}++) ");
+                                                                                    source.BlockWrite(_ => innerDeferred.Run());
+                                                                                }, deferred);
                                                                             }
-                                                                            var indexName = indexNames[i];
-                                                                            deferred = source.DeferredWrite((source, innerDeferred, _) => {
-                                                                                source.Write($"for (int {indexName} = 0; {indexName} < {size}; {indexName}++) ");
-                                                                                source.BlockWrite(_ => innerDeferred.Run());
-                                                                            }, deferred);
+                                                                            deferred.Run();
                                                                         }
-                                                                        deferred.Run();
+                                                                        
                                                                         source.WriteLine();
                                                                         goto nextMember;
                                                                     }
@@ -1287,15 +1332,30 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                     return;
                                                 }
                                             }
-                                            UnfoldMembers_Seri(typeSym, packet.Members.Select<MemberDataAccessRound, (MemberDataAccessRound, string?)>(m => (m, null)));
-                                            if (packet.HasExtraData)
-                                            {
-                                                source.WriteLine($"Marshal.Copy({nameof(IExtraData.ExtraData)}, 0, (IntPtr)ptr_current, {nameof(IExtraData.ExtraData)}.Length);");
-                                                source.WriteLine($"ptr_current = Unsafe.Add<byte>(ptr_current, {nameof(IExtraData.ExtraData)}.Length);");
-                                            }
 
-                                            source.WriteLine();
-                                            source.WriteLine("ptr = ptr_current;");
+
+
+                                            if (packet.CompressData != default) {
+                                                source.WriteLine($"var ptr_compressed = ptr_current;");
+                                                source.WriteLine($"var rawBuffer = ArrayPool<byte>.Shared.Rent({packet.CompressData.bufferSize});");
+                                                source.Write("fixed (void* ptr_rawdata = rawBuffer)");
+                                                source.BlockWrite((source) => {
+                                                    source.WriteLine("ptr_current = ptr_rawdata;");
+                                                    UnfoldMembers_Seri(typeSym, packet.Members.Select<MemberDataAccessRound, (MemberDataAccessRound, string?)>(m => (m, null)));
+                                                    source.WriteLine($"CommonCode.WriteCompressedData(ptr_rawdata, ref ptr_compressed, (int)((long)ptr_current - (long)ptr_rawdata), {packet.CompressData.compressLevel});");
+                                                });
+                                                source.WriteLine($"ArrayPool<byte>.Shared.Return(rawBuffer);");
+                                                source.WriteLine("ptr = ptr_compressed;");
+                                            }
+                                            else {
+                                                UnfoldMembers_Seri(typeSym, packet.Members.Select<MemberDataAccessRound, (MemberDataAccessRound, string?)>(m => (m, null)));
+                                                if (packet.HasExtraData) {
+                                                    source.WriteLine($"Marshal.Copy({nameof(IExtraData.ExtraData)}, 0, (IntPtr)ptr_current, {nameof(IExtraData.ExtraData)}.Length);");
+                                                    source.WriteLine($"ptr_current = Unsafe.Add<byte>(ptr_current, {nameof(IExtraData.ExtraData)}.Length);");
+                                                }
+                                                source.WriteLine();
+                                                source.WriteLine("ptr = ptr_current;");
+                                            }
                                         });
                                     }
                                     #endregion
@@ -1318,41 +1378,56 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                         return false;
                                     }))
                                     {
-                                        source.WriteLine($"[MemberNotNull({string.Join(", ", memberNullables.Select(m => $"nameof({m})"))})]");
-                                        source.Write($"public unsafe {(packet.IsSubmodel ? "override " : "")}void ReadContent(ref void* ptr) ");
-                                        source.BlockWrite((source) => {
-                                            source.WriteLine("var ptr_current = ptr;");
+                                        if (packet.LengthDependent) {
+                                            source.WriteLine("/// <summary>");
+                                            source.WriteLine("/// use ptr_end instead restContentSize");
+                                            source.WriteLine("/// </summary>");
+                                            source.WriteLine($"[Obsolete]");
+                                            source.WriteLine($"[MemberNotNull({string.Join(", ", memberNullables.Select(m => $"nameof({m})"))})]");
+                                            source.WriteLine($"public void ReadContent(ref void* ptr{(packet.LengthDependent ? ", int restContentSize" : "")}) => ReadContent(ref ptr, Unsafe.Add<byte>(ptr, restContentSize));");
                                             source.WriteLine();
 
+                                            source.WriteLine("/// <summary>");
+                                            source.WriteLine("/// This operation is not supported and always throws a System.NotSupportedException.");
+                                            source.WriteLine("/// </summary>");
+                                            source.WriteLine($"[Obsolete]");
+                                            if (packet.IsSubmodel) {
+                                                source.WriteLine($"public override void ReadContent(ref void* ptr) => throw new {nameof(NotSupportedException)}();");
+                                            }
+                                            else {
+                                                source.WriteLine($"void {nameof(ISerializableData)}.ReadContent(ref void* ptr) => throw new {nameof(NotSupportedException)}();");
+                                            }
+                                            source.WriteLine($"[MemberNotNull({string.Join(", ", memberNullables.Select(m => $"nameof({m})"))})]");
+                                            source.Write($"public unsafe void ReadContent(ref void* ptr, void* ptr_end) ");
+                                        }
+                                        else {
+                                            source.WriteLine($"[MemberNotNull({string.Join(", ", memberNullables.Select(m => $"nameof({m})"))})]");
+                                            source.Write($"public unsafe {(packet.IsSubmodel ? "override " : "")}void ReadContent(ref void* ptr) ");
+                                        }
+                                        source.BlockWrite((source) => {
+
                                             int indexID = 0;
-                                            void UnfoldMembers_Deser(INamedTypeSymbol typeSym, IEnumerable<(MemberDataAccessRound m, string? parant_var)> memberAccesses)
-                                            {
-                                                try
-                                                {
-                                                    foreach (var (m, parant_var) in memberAccesses)
-                                                    {
+                                            void UnfoldMembers_Deser(INamedTypeSymbol typeSym, IEnumerable<(MemberDataAccessRound m, string? parant_var)> memberAccesses) {
+                                                try {
+                                                    foreach (var (m, parant_var) in memberAccesses) {
                                                         var mType = m.MemberType;
                                                         var mTypeStr = mType.ToString();
-                                                        CheckMemberSymbol(typeSym, m, out var mTypeSym, out var fieldMemberSym, out var propMemberSym);
+                                                        CheckMemberSymbol(typeSym, m, out var memberTypeSym, out var fieldMemberSym, out var propMemberSym);
 
                                                         string memberAccess;
 
-                                                        if (parant_var == null)
-                                                        {
+                                                        if (parant_var == null) {
                                                             memberAccess = m.MemberName;
                                                         }
-                                                        else
-                                                        {
+                                                        else {
                                                             memberAccess = $"{parant_var}.{m.MemberName}";
                                                         }
 
-                                                        if (m.IsArrayRound)
-                                                        {
+                                                        if (m.IsArrayRound) {
                                                             mType = ((ArrayTypeSyntax)mType).ElementType;
-                                                            mTypeSym = ((IArrayTypeSymbol)mTypeSym).ElementType;
+                                                            memberTypeSym = ((IArrayTypeSymbol)memberTypeSym).ElementType;
 
-                                                            if (mType is NullableTypeSyntax)
-                                                            {
+                                                            if (mType is NullableTypeSyntax) {
                                                                 throw new DiagnosticException(
                                                                     Diagnostic.Create(
                                                                         new DiagnosticDescriptor(
@@ -1371,13 +1446,11 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                             mTypeStr = mType.ToString();
                                                             memberAccess = $"{memberAccess}[{string.Join(",", m.IndexNames)}]";
                                                         }
-                                                        if (m.IsEnumRound)
-                                                        {
+                                                        if (m.IsEnumRound) {
                                                             mTypeStr = m.EnumType.underlyingType.GetPredifinedName();
                                                         }
                                                         var deferredMemberWrite = source.DeferredWrite((source, _, _) => {
-                                                            switch (mTypeStr)
-                                                            {
+                                                            switch (mTypeStr) {
                                                                 case "byte":
                                                                 case nameof(Byte):
                                                                 case "sbyte":
@@ -1419,11 +1492,11 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                     source.WriteLine();
                                                                     goto nextMember;
                                                                 default:
-                                                                    if (mType is ArrayTypeSyntax arr)
-                                                                    {
+                                                                    if (mType is ArrayTypeSyntax arr) {
 
-                                                                        if (arr.RankSpecifiers.Count != 1 || m.IsArrayRound)
-                                                                        {
+                                                                        var eleSym = ((IArrayTypeSymbol)memberTypeSym).ElementType;
+
+                                                                        if (arr.RankSpecifiers.Count != 1 || m.IsArrayRound) {
                                                                             throw new DiagnosticException(
                                                                                 Diagnostic.Create(
                                                                                     new DiagnosticDescriptor(
@@ -1453,8 +1526,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                                 packet.TypeName));
 
                                                                         var indexExps = arrAtt.ExtractAttributeParams();
-                                                                        if (indexExps.Length != arr.RankSpecifiers[0].Rank)
-                                                                        {
+                                                                        if (indexExps.Length != arr.RankSpecifiers[0].Rank) {
                                                                             throw new DiagnosticException(
                                                                                 Diagnostic.Create(
                                                                                     new DiagnosticDescriptor(
@@ -1469,49 +1541,37 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                                     packet.TypeName));
                                                                         }
 
-                                                                        string[] indexNames = new string[indexExps.Length];
-                                                                        object[] rankSizes = new object[indexExps.Length];
-
-                                                                        for (int i = 0; i < indexNames.Length; i++)
-                                                                        {
-                                                                            indexID += 1;
-                                                                            indexNames[i] = $"_g_index_{indexID}";
+                                                                        bool elementRepeating = eleSym.AllInterfaces.Any(i => i.Name == nameof(IRepeatElement<int>));
+                                                                        if (elementRepeating && arr.RankSpecifiers[0].Rank != 1) {
+                                                                            throw new DiagnosticException(
+                                                                                Diagnostic.Create(
+                                                                                    new DiagnosticDescriptor(
+                                                                                        "SCG35",
+                                                                                        "Array rank conflict",
+                                                                                        $"Arrays that implement '{nameof(IRepeatElement<int>)}' must be one-dimensional",
+                                                                                        "",
+                                                                                        DiagnosticSeverity.Error,
+                                                                                        true),
+                                                                                    m.MemberDeclaration.GetLocation()));
                                                                         }
 
-                                                                        var deferred = source.DeferredWrite<DeferredWriteAction?>((source, _, _) => {
-                                                                            m.EnterArrayRound(indexNames);
-                                                                            UnfoldMembers_Deser(typeSym, new (MemberDataAccessRound, string?)[] {
-                                                                            (m, parant_var)
-                                                                        });
-                                                                            m.ExitArrayRound();
-                                                                        }, null);
-
-                                                                        for (int i = indexExps.Length - 1; i >= 0; i--)
-                                                                        {
-                                                                            var indexExp = indexExps[i];
+                                                                        object GetArraySize(ExpressionSyntax indexExp, int i) {
                                                                             object? size = null;
-                                                                            if (indexExp is LiteralExpressionSyntax lit)
-                                                                            {
+                                                                            if (indexExp is LiteralExpressionSyntax lit) {
                                                                                 var text = lit.Token.Text;
-                                                                                if (text.StartsWith("\"") && text.EndsWith("\""))
-                                                                                {
+                                                                                if (text.StartsWith("\"") && text.EndsWith("\"")) {
                                                                                     size = (parant_var is null ? "" : $"{parant_var}.") + text.Substring(1, text.Length - 2);
                                                                                 }
-                                                                                else if (ushort.TryParse(text, out var numSize))
-                                                                                {
+                                                                                else if (ushort.TryParse(text, out var numSize)) {
                                                                                     size = numSize;
                                                                                 }
                                                                             }
-                                                                            else if (indexExp is InvocationExpressionSyntax inv)
-                                                                            {
-                                                                                if (inv.Expression.ToString() == "nameof")
-                                                                                {
+                                                                            else if (indexExp is InvocationExpressionSyntax inv) {
+                                                                                if (inv.Expression.ToString() == "nameof") {
                                                                                     size = (parant_var is null ? "" : $"{parant_var}.") + inv.ArgumentList.Arguments.First().Expression;
                                                                                 }
                                                                             }
-
-                                                                            if (size == null)
-                                                                            {
+                                                                            if (size == null) {
                                                                                 throw new DiagnosticException(
                                                                                     Diagnostic.Create(
                                                                                         new DiagnosticDescriptor(
@@ -1526,29 +1586,70 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                                         m.MemberName,
                                                                                         packet.TypeName));
                                                                             }
-                                                                            else
-                                                                            {
-                                                                                rankSizes[i] = size;
-                                                                            }
-
-                                                                            var indexName = indexNames[i];
-                                                                            deferred = source.DeferredWrite((source, innerDeferred, _) => {
-                                                                                source.Write($"for (int {indexName} = 0; {indexName} < {size}; {indexName}++) ");
-                                                                                source.BlockWrite(_ => innerDeferred.Run());
-                                                                            }, deferred);
+                                                                            return size;
                                                                         }
 
-                                                                        source.WriteLine($"{memberAccess} = new {arr.ElementType}[{string.Join(", ", rankSizes)}];");
-                                                                        deferred.Run();
+                                                                        if (elementRepeating) {
+                                                                            indexID += 1;
+                                                                            source.WriteLine($"var _g_elementCount_{indexID} = {GetArraySize(indexExps.First(), 0)};");
+                                                                            source.WriteLine($"var _g_arrayCache_{indexID} = ArrayPool<{eleSym.Name}>.Shared.Rent(_g_elementCount_{indexID});");
+                                                                            source.WriteLine($"var _g_arrayIndex_{indexID} = 0;");
+                                                                            source.Write($"while(_g_elementCount_{indexID} > 0) ");
+                                                                            source.BlockWrite((source) => {
+
+                                                                                if (eleSym.IsValueType) {
+                                                                                    source.WriteLine($"_g_arrayCache_{indexID}[_g_arrayIndex_{indexID}] = default;");
+                                                                                    source.WriteLine($"_g_arrayCache_{indexID}[_g_arrayIndex_{indexID}].ReadContent(ref ptr_current);");
+                                                                                }
+                                                                                else {
+                                                                                    source.WriteLine($"_g_arrayCache_{indexID}[_g_arrayIndex_{indexID}] = new (ref ptr_current);");
+                                                                                }
+                                                                                source.WriteLine($"_g_elementCount_{indexID} -= _g_arrayCache_{indexID}[_g_arrayIndex_{indexID}].{nameof(IRepeatElement<int>.RepeatCount)} + 1;");
+                                                                                source.WriteLine($"++_g_arrayIndex_{indexID};");
+                                                                            });
+                                                                            source.WriteLine();
+                                                                            source.WriteLine($"{memberAccess} = new {eleSym.Name}[_g_arrayIndex_{indexID}];");
+                                                                            source.WriteLine($"Array.Copy(_g_arrayCache_{indexID}, {memberAccess}, _g_arrayIndex_{indexID});");
+                                                                            source.WriteLine();
+                                                                        }
+                                                                        else {
+                                                                            string[] indexNames = new string[indexExps.Length];
+                                                                            object[] rankSizes = new object[indexExps.Length];
+
+                                                                            for (int i = 0; i < indexNames.Length; i++) {
+                                                                                indexID += 1;
+                                                                                indexNames[i] = $"_g_index_{indexID}";
+                                                                            }
+
+                                                                            var deferred = source.DeferredWrite<DeferredWriteAction?>((source, _, _) => {
+                                                                                m.EnterArrayRound(indexNames);
+                                                                                UnfoldMembers_Deser(typeSym, new (MemberDataAccessRound, string?)[] {
+                                                                                    (m, parant_var)
+                                                                                });
+                                                                                m.ExitArrayRound();
+                                                                            }, null);
+
+                                                                            for (int i = indexExps.Length - 1; i >= 0; i--) {
+                                                                                var size = rankSizes[i] = GetArraySize(indexExps[i], i);
+                                                                                var indexName = indexNames[i];
+                                                                                deferred = source.DeferredWrite((source, innerDeferred, _) => {
+                                                                                    source.Write($"for (int {indexName} = 0; {indexName} < {size}; {indexName}++) ");
+                                                                                    source.BlockWrite(_ => innerDeferred.Run());
+                                                                                }, deferred);
+                                                                            }
+
+                                                                            source.WriteLine($"{memberAccess} = new {arr.ElementType}[{string.Join(", ", rankSizes)}];");
+                                                                            deferred.Run();
+                                                                        }
+
+                                                                        
                                                                         source.WriteLine();
                                                                         goto nextMember;
                                                                     }
 
-                                                                    if (mTypeSym.AllInterfaces.Any(i => i.Name == nameof(ISoildSerializableData)))
-                                                                    {
+                                                                    if (memberTypeSym.AllInterfaces.Any(i => i.Name == nameof(ISoildSerializableData))) {
 
-                                                                        if (!mTypeSym.IsUnmanagedType)
-                                                                        {
+                                                                        if (!memberTypeSym.IsUnmanagedType) {
                                                                             throw new DiagnosticException(
                                                                                 Diagnostic.Create(
                                                                                     new DiagnosticDescriptor(
@@ -1567,16 +1668,13 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                         goto nextMember;
                                                                     }
 
-                                                                    if (mTypeSym.IsAbstract)
-                                                                    {
+                                                                    if (memberTypeSym.IsAbstract) {
 
-                                                                        var mTypefullName = mTypeSym.GetFullName();
-                                                                        if (abstractTypesSymbols.Any(abs => abs.GetFullName() == mTypefullName))
-                                                                        {
-                                                                            source.WriteLine($"{memberAccess} = {mTypeSym.Name}.Read{mTypeSym.Name}(ref ptr_current);");
+                                                                        var mTypefullName = memberTypeSym.GetFullName();
+                                                                        if (abstractTypesSymbols.Any(abs => abs.GetFullName() == mTypefullName)) {
+                                                                            source.WriteLine($"{memberAccess} = {memberTypeSym.Name}.Read{memberTypeSym.Name}(ref ptr_current);");
                                                                         }
-                                                                        else
-                                                                        {
+                                                                        else {
                                                                             throw new DiagnosticException(
                                                                                 Diagnostic.Create(
                                                                                     new DiagnosticDescriptor(
@@ -1587,66 +1685,77 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                                         DiagnosticSeverity.Error,
                                                                                         true),
                                                                                     m.MemberType.GetLocation(),
-                                                                                    mTypeSym.Name,
+                                                                                    memberTypeSym.Name,
                                                                                     typeSym.Name,
                                                                                     m.MemberName));
                                                                         }
                                                                     }
-                                                                    else
-                                                                    {
+                                                                    else {
+                                                                        if (memberTypeSym.AllInterfaces.Any(t => t.Name == nameof(ISerializableData))) {
+                                                                            if (memberTypeSym.AllInterfaces.Any(t => t.Name == nameof(ILengthDependent))) {
 
-                                                                        if (mTypeSym.AllInterfaces.Any(t => t.Name == nameof(ISerializableData) || t.Name == nameof(IAutoSerializableData)))
-                                                                        {
+                                                                                if (!typeSym.AllInterfaces.Any(t => t.Name == nameof(ILengthDependent))) {
+                                                                                    throw new DiagnosticException(
+                                                                                        Diagnostic.Create(
+                                                                                            new DiagnosticDescriptor(
+                                                                                                "SCG32",
+                                                                                                "unexcepted member type",
+                                                                                                $"Members that implement '{nameof(ILengthDependent)}' must be defined within a type that also implements '{nameof(ILengthDependent)}'.",
+                                                                                                "",
+                                                                                                DiagnosticSeverity.Error,
+                                                                                                true),
+                                                                                            m.MemberType.GetLocation()));
+                                                                                }
 
-                                                                            if (mTypeSym.IsUnmanagedType)
-                                                                            {
-                                                                                source.WriteLine($"{memberAccess}.ReadContent(ref ptr_current);");
+                                                                                if (memberTypeSym.IsUnmanagedType) {
+                                                                                    source.WriteLine($"{memberAccess}.ReadContent(ref ptr_current, ptr_end);");
+                                                                                }
+                                                                                else {
+                                                                                    source.WriteLine($"{memberAccess} = new (ref ptr_current, ptr_end);");
+                                                                                }
                                                                             }
-                                                                            else
-                                                                            {
-                                                                                source.WriteLine($"{memberAccess} = new (ref ptr_current);");
+                                                                            else {
+                                                                                if (memberTypeSym.IsUnmanagedType) {
+                                                                                    source.WriteLine($"{memberAccess}.ReadContent(ref ptr_current);");
+                                                                                }
+                                                                                else {
+                                                                                    source.WriteLine($"{memberAccess} = new (ref ptr_current);");
+                                                                                }
                                                                             }
 
                                                                             source.WriteLine();
                                                                             goto nextMember;
                                                                         }
 
-                                                                        var seqType = mTypeSym.AllInterfaces.FirstOrDefault(i => i.Name == nameof(ISequentialSerializableData<byte>))?.TypeArguments.First();
-                                                                        if (seqType != null)
-                                                                        {
+                                                                        var seqType = memberTypeSym.AllInterfaces.FirstOrDefault(i => i.Name == nameof(ISequentialSerializableData<byte>))?.TypeArguments.First();
+                                                                        if (seqType != null) {
                                                                             var seqTypeName = seqType.GetFullTypeName();
-                                                                            if (m.IsProperty)
-                                                                            {
+                                                                            if (m.IsProperty) {
                                                                                 var varName = $"gen_var_{parant_var}_{m.MemberName}";
                                                                                 source.WriteLine($"{seqTypeName} {varName} = {(seqType.IsUnmanagedType ? "default" : "new ()")};");
 
                                                                                 source.WriteLine($"{varName}.{nameof(ISequentialSerializableData<byte>.SequentialData)} = Unsafe.Read<{seqTypeName}>(ptr_current);");
                                                                                 source.WriteLine($"{memberAccess} = {varName};");
                                                                             }
-                                                                            else
-                                                                            {
+                                                                            else {
                                                                                 source.WriteLine($"{memberAccess}.{nameof(ISequentialSerializableData<byte>.SequentialData)} = Unsafe.Read<{seqTypeName}>(ptr_current);");
                                                                             }
                                                                             source.WriteLine($"ptr_current = Unsafe.Add<{seqTypeName}>(ptr_current, 1);");
                                                                             source.WriteLine();
                                                                             goto nextMember;
                                                                         }
-                                                                        else if (mTypeSym is INamedTypeSymbol { EnumUnderlyingType: not null } namedEnumTypeSym)
-                                                                        {
-                                                                            m.EnterEnumRound((mTypeSym, namedEnumTypeSym.EnumUnderlyingType));
+                                                                        else if (memberTypeSym is INamedTypeSymbol { EnumUnderlyingType: not null } namedEnumTypeSym) {
+                                                                            m.EnterEnumRound((memberTypeSym, namedEnumTypeSym.EnumUnderlyingType));
                                                                             UnfoldMembers_Deser(typeSym, new (MemberDataAccessRound, string?)[] {
                                                                                 (m, parant_var)
                                                                             });
                                                                             m.ExitEnumRound();
                                                                             goto nextMember;
                                                                         }
-                                                                        else
-                                                                        {
-                                                                            if (mTypeSym is INamedTypeSymbol namedSym)
-                                                                            {
+                                                                        else {
+                                                                            if (memberTypeSym is INamedTypeSymbol namedSym) {
 
-                                                                                if (Compilation.TryGetTypeDefSyntax(mTypeStr, out var tdef, fullNamespace, usings) && tdef is not null)
-                                                                                {
+                                                                                if (Compilation.TryGetTypeDefSyntax(mTypeStr, out var tdef, fullNamespace, usings) && tdef is not null) {
                                                                                     var varName = $"gen_var_{parant_var}_{m.MemberName}";
                                                                                     source.WriteLine($"{mTypeStr} {varName} = {(namedSym.IsUnmanagedType ? "default" : "new ()")};");
                                                                                     UnfoldMembers_Deser(namedSym, Transform(tdef).Members.Select<MemberDataAccessRound, (MemberDataAccessRound, string?)>(m => (m, varName)));
@@ -1654,8 +1763,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                                     goto nextMember;
                                                                                 }
                                                                             }
-                                                                            else
-                                                                            {
+                                                                            else {
                                                                                 throw new DiagnosticException(
                                                                                     Diagnostic.Create(
                                                                                         new DiagnosticDescriptor(
@@ -1668,7 +1776,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                                         m.MemberType.GetLocation(),
                                                                                         m.MemberName,
                                                                                         typeSym.Name,
-                                                                                        mTypeSym));
+                                                                                        memberTypeSym));
                                                                             }
                                                                         }
                                                                     }
@@ -1679,20 +1787,43 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                             }
                                                         }, new object());
 
-                                                        MemberConditionCheck(typeSym, source, m, mTypeSym, parant_var, ref deferredMemberWrite, false);
+                                                        MemberConditionCheck(typeSym, source, m, memberTypeSym, parant_var, ref deferredMemberWrite, false);
                                                         deferredMemberWrite.Run();
                                                     }
                                                 }
-                                                catch (DiagnosticException de)
-                                                {
+                                                catch (DiagnosticException de) {
                                                     context.ReportDiagnostic(de.Diagnostic);
                                                     return;
                                                 }
                                             }
-                                            UnfoldMembers_Deser(typeSym, packet.Members.Select<MemberDataAccessRound, (MemberDataAccessRound, string?)>(m => (m, null)));
 
                                             source.WriteLine();
-                                            source.WriteLine("ptr = ptr_current;");
+                                            if (packet.CompressData != default) {
+                                                source.WriteLine($"var decompressedBuffer = ArrayPool<byte>.Shared.Rent({packet.CompressData.bufferSize});");
+                                                source.Write("fixed (void* ptr_decompressed = decompressedBuffer)");
+                                                source.BlockWrite((source) => {
+                                                    source.WriteLine("var ptr_current = ptr_decompressed;");
+                                                    source.WriteLine($"CommonCode.ReadDecompressedData(ptr, ref ptr_current, (int)((long)ptr_end - (long)ptr));");
+                                                    source.WriteLine("ptr_current = ptr_decompressed;");
+                                                    UnfoldMembers_Deser(typeSym, packet.Members.Select<MemberDataAccessRound, (MemberDataAccessRound, string?)>(m => (m, null)));
+                                                });
+                                                source.WriteLine("ptr = ptr_end;");
+                                                source.WriteLine($"ArrayPool<byte>.Shared.Return(decompressedBuffer);");
+                                            }
+                                            else {
+                                                source.WriteLine("var ptr_current = ptr;");
+                                                UnfoldMembers_Deser(typeSym, packet.Members.Select<MemberDataAccessRound, (MemberDataAccessRound, string?)>(m => (m, null)));
+                                                source.WriteLine();
+                                                if (packet.HasExtraData) {
+                                                    source.WriteLine("var restContentSize = (int)((long)ptr_end - (long)ptr_current);");
+                                                    source.WriteLine($"{nameof(IExtraData.ExtraData)} = new byte[restContentSize];");
+                                                    source.WriteLine($"Marshal.Copy((IntPtr)ptr_current, {nameof(IExtraData.ExtraData)}, 0, restContentSize);");
+                                                    source.WriteLine("ptr = ptr_end;");
+                                                }
+                                                else {
+                                                    source.WriteLine("ptr = ptr_current;");
+                                                }
+                                            }
                                         });
                                     }
                                     #endregion
@@ -1771,23 +1902,28 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                     source.BlockWrite((source) => {
                         source.Write($"public unsafe partial class {packet.TypeName} ");
                         source.BlockWrite((source) => {
-                            source.Write($"public unsafe static {packet.TypeName} Read{packet.TypeName}(ref void* ptr{(packet.IsNetPacket ? ", int restContentSize" : "")}{(packet.IsNetPacket ? ", bool isServerSide" : "")}) ");
+                            if (packet.LengthDependent || packet.IsNetPacket) {
+                                source.WriteLine("/// <summary>");
+                                source.WriteLine("/// use ptr_end instead restContentSize");
+                                source.WriteLine("/// </summary>");
+                                source.WriteLine($"[Obsolete]");
+                                source.WriteLine($"public static {packet.TypeName} Read{packet.TypeName}(ref void* ptr, int restContentSize{(packet.IsNetPacket ? ", bool isServerSide" : "")}) => Read{packet.TypeName}(ref ptr, Unsafe.Add<byte>(ptr, restContentSize){(packet.IsNetPacket ? ", isServerSide" : "")});");
+                                source.WriteLine();
+                            }
+                            source.Write($"public unsafe static {packet.TypeName} Read{packet.TypeName}(ref void* ptr{(packet.IsNetPacket ? ", void* ptr_end" : "")}{(packet.IsNetPacket ? ", bool isServerSide" : "")}) ");
                             source.BlockWrite((source) => {
                                 source.WriteLine($"{enumType.Name} identity = ({enumType.Name})Unsafe.Read<{enumType.EnumUnderlyingType}>(ptr);");
                                 source.WriteLine($"ptr = Unsafe.Add<{enumType.EnumUnderlyingType}>(ptr, 1);");
-                                if (packet.IsNetPacket) {
-                                    source.WriteLine($"restContentSize -= sizeof({enumType.EnumUnderlyingType});");
-                                }
                                 source.Write($"switch (identity) ");
                                 source.BlockWrite((source) => {
                                     foreach (var enumValue in enumType.GetMembers().OfType<IFieldSymbol>()) {
                                         var packetMatch = list.FirstOrDefault(a => a.enumMemberName == enumValue.Name);
                                         if (packetMatch.packet is not null) {
                                             if (packetMatch.packet.IsAbstract) {
-                                                source.WriteLine($"case {enumType.Name}.{enumValue.Name}: return {packetMatch.packet.TypeName}.Read{packetMatch.packet.TypeName}(ref ptr{(packet.IsNetPacket ? ", restContentSize" : "")}{(packet.IsNetPacket ? ", isServerSide" : "")});");
+                                                source.WriteLine($"case {enumType.Name}.{enumValue.Name}: return {packetMatch.packet.TypeName}.Read{packetMatch.packet.TypeName}(ref ptr{(packet.IsNetPacket ? ", ptr_end" : "")}{(packet.IsNetPacket ? ", isServerSide" : "")});");
                                             }
                                             else {
-                                                source.WriteLine($"case {enumType.Name}.{enumValue.Name}: return new {packetMatch.packet.TypeName}(ref ptr{(packetMatch.packet.HasExtraData ? ", restContentSize" : "")}{(packetMatch.packet.SideDependent ? ", isServerSide" : "")});");
+                                                source.WriteLine($"case {enumType.Name}.{enumValue.Name}: return new {packetMatch.packet.TypeName}(ref ptr{(packetMatch.packet.LengthDependent ? ", ptr_end" : "")}{(packetMatch.packet.SideDependent ? ", isServerSide" : "")});");
                                             }
                                         }
                                     }

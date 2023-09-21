@@ -10,6 +10,9 @@ namespace EnchCoreApi.TrProtocol.Models {
         public short TileY;
         [IgnoreSerialize]
         public string? Name;
-        public string NameNotNull => Name ?? string.Empty;
+        public string NameNotNull { 
+            get => Name ?? string.Empty;
+            set => Name = value;
+        }
     }
 }
