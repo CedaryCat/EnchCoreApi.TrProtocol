@@ -8,31 +8,31 @@ namespace Terraria.DataStructures {
 
         [MemberConvertion(ConvertionOption.Copy)]
         [Condition(nameof(Indicator), 0)]
-        public int _sourcePlayerIndex;
+        public short _sourcePlayerIndex;
 
         [MemberConvertion(ConvertionOption.Copy)]
         [Condition(nameof(Indicator), 1)]
-        public int _sourceNPCIndex;
+        public short _sourceNPCIndex;
 
         [MemberConvertion(ConvertionOption.Copy)]
         [Condition(nameof(Indicator), 2)]
-        public int _sourceProjectileLocalIndex;
+        public short _sourceProjectileLocalIndex;
 
         [MemberConvertion(ConvertionOption.Copy)]
         [Condition(nameof(Indicator), 3)]
-        public int _sourceOtherIndex;
+        public byte _sourceOtherIndex;
 
         [MemberConvertion(ConvertionOption.Copy)]
         [Condition(nameof(Indicator), 4)]
-        public int _sourceProjectileType;
+        public short _sourceProjectileType;
 
         [MemberConvertion(ConvertionOption.Copy)]
         [Condition(nameof(Indicator), 5)]
-        public int _sourceItemType;
+        public short _sourceItemType;
 
         [MemberConvertion(ConvertionOption.Copy)]
         [Condition(nameof(Indicator), 6)]
-        public int _sourceItemPrefix;
+        public byte _sourceItemPrefix;
 
         [MemberConvertion(ConvertionOption.Copy)]
         [Condition(nameof(Indicator), 7)]

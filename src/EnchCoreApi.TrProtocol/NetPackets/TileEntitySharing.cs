@@ -8,5 +8,6 @@ public partial class TileEntitySharing : NetPacket {
     public int ID;
     public bool IsNew;
     [Condition(nameof(IsNew), true)]
+    [ExternalMemberValue(nameof(TileEntity.NetworkSend), true)]
     public TileEntity? Entity;
 }

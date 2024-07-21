@@ -87,10 +87,8 @@ namespace TrClient {
         public IEnumerable<NetPacket> Receive() {
             var array = ArrayPool<NetPacket>.Shared.Rent(1024);
             int arrayIndex = 0;
-            var readStart = 0;
 
             var totalLen = netStream.Read(readBuffer, 0, 1024 * 32);
-            var buffer = new Span<byte>(readBuffer);
             fixed(void* ptr = readBuffer) {
                 var readPtr = ptr;
                 while (totalLen > 0) {
@@ -167,12 +165,12 @@ namespace TrClient {
         //}
         //private class Handlers {
         //    protected readonly List<Delegate?> handlers = new (180);
-        //    protected static int Count;
+        //    protected static int RepeatCount;
         //    public void Register<TPacket>(Action<TPacket> handler) where TPacket : NetPacket {
 
         //        var id = HandlersInternal<TPacket>.ID;
 
-        //        while (handlers.Count <= id) {
+        //        while (handlers.RepeatCount <= id) {
         //            handlers.Add(null);
         //        }
 
@@ -190,7 +188,7 @@ namespace TrClient {
         //    private sealed class HandlersInternal<TPacket> : Handlers where TPacket : NetPacket {
         //        public static readonly int ID;
         //        static HandlersInternal() {
-        //            ID = Count++;
+        //            ID = RepeatCount++;
         //        }
         //    }
         //}
@@ -274,6 +272,7 @@ namespace TrClient {
                         Console.ResetColor();
                     }
                 }
+                Send(new PlayerControls(default, default, default, default, default, default, new Vector2(1000,1000), default, default, default));
             }
 
             client.Close();

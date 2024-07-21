@@ -1,5 +1,4 @@
 ﻿namespace EnchCoreApi.TrProtocol.Attributes {
-
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public class ArraySizeAttribute : Attribute {
         private object[] LengthOfEachRank;

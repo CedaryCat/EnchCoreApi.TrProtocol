@@ -111,6 +111,16 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                 innermost?.Invoke(writer);
                 return writer;
             }
+
+            public override SourceCodeWriter WriteToAnother(SourceCodeWriter another, Action<SourceCodeWriter>? innermost = null)
+            {
+                foreach (var value in values)
+                {
+                    another.Write(value);
+                }
+                innermost?.Invoke(another);
+                return another;
+            }
         }
         sealed class DeferredNormalWriteAction<TParams> : DeferredWriteAction {
             SourceCodeWriter writer;
@@ -124,6 +134,12 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
             public sealed override SourceCodeWriter Run(Action<SourceCodeWriter>? innermost = null) {
                 write(writer, p, innermost);
                 return writer;
+            }
+
+            public override SourceCodeWriter WriteToAnother(SourceCodeWriter another, Action<SourceCodeWriter>? innermost = null)
+            {
+                write(another, p, innermost);
+                return another;
             }
         }
         sealed class DeferredBlockWriteAction<TParams> : DeferredWriteAction {
@@ -142,10 +158,19 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                     write(writer, p, innermost);
                 }, p, autoBrace);
             }
+
+            public override SourceCodeWriter WriteToAnother(SourceCodeWriter another, Action<SourceCodeWriter>? innermost = null)
+            {
+                return another.BlockWrite((source, p) => {
+                    write(another, p, innermost);
+                }, p, autoBrace);
+            }
         }
         public delegate void DeferredBlockWriteDele<TParams>(SourceCodeWriter source, TParams param, Action<SourceCodeWriter>? innermost);
     }
-    public abstract class DeferredWriteAction {
+    public abstract class DeferredWriteAction
+    {
         public abstract SourceCodeWriter Run(Action<SourceCodeWriter>? innermost = null);
+        public abstract SourceCodeWriter WriteToAnother(SourceCodeWriter another, Action<SourceCodeWriter>? innermost = null);
     }
 }

@@ -4,10 +4,11 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	<LangVersion>11.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <AssemblyVersion>1.0.1.14</AssemblyVersion>
-    <FileVersion>1.0.1.14</FileVersion>
-	<Version>1.0.2-rc</Version>
+    <AssemblyVersion>1.0.4.0</AssemblyVersion>
+    <FileVersion>1.0.4.0</FileVersion>
+	<Version>1.0.4</Version>
 	<PackageReleaseNotes>Initial 1.4.4.9 support</PackageReleaseNotes>
 	<PackageLicenseFile>COPYING.txt</PackageLicenseFile>
 	<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
@@ -21,7 +22,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\EnchCoreApi.TrProtocol.SerializeCodeGenerator\EnchCoreApi.TrProtocol.SerializeCodeGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\EnchCoreApi.TrProtocol.SerializeCodeGenerator\EnchCoreApi.TrProtocol.SerializeCodeGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="All"/>
 	</ItemGroup>
 
 	<Import Project="..\EnchCoreApi.TrProtocol.Shared\EnchCoreApi.TrProtocol.Shared.projitems" Label="Shared" />

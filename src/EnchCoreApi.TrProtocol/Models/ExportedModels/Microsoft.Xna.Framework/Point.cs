@@ -4,11 +4,7 @@ using EnchCoreApi.TrProtocol.Interfaces;
 namespace Microsoft.Xna.Framework;
 
 [TypeMigrationTarget]
-public struct Point : ISoildSerializableData, ISequentialSerializableData<Point> {
-    public Point SequentialData {
-        get => this;
-        set => this = value;
-    }
+public struct Point : ISoildSerializableData {
     public static Point[] Array = System.Array.Empty<Point>();
 
     public int X;

@@ -5,7 +5,7 @@ using System.Globalization;
 namespace Microsoft.Xna.Framework;
 [TypeMigrationTarget]
 [Serializable]
-public struct Vector3 : IEquatable<Vector3>, ISoildSerializableData, ISequentialSerializableData<Vector3> {
+public struct Vector3 : IEquatable<Vector3>, ISoildSerializableData {
     public Vector3 SequentialData {
         get => this;
         set => this = value;

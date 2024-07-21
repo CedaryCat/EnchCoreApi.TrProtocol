@@ -11,11 +11,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol", "E
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.Convertion", "EnchCoreApi.TrProtocol.Convertion\EnchCoreApi.TrProtocol.Convertion.csproj", "{A5C82068-CAC3-4AD0-91AF-39A06031981D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SerializeTest", "SerializeTest\SerializeTest.csproj", "{CEC2A08C-49AD-4CEB-BE97-323829F32ACD}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrClient", "TrClient\TrClient.csproj", "{FE1818B0-E450-4E67-B057-31D9FB88544C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnchCoreApi.TrProtocol.NugetBuilder", "EnchCoreApi.TrProtocol.NugetBuilder\EnchCoreApi.TrProtocol.NugetBuilder.csproj", "{BFAA1648-3AB8-4DB6-80D6-7BEE7E8C6863}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.NugetBuilder", "EnchCoreApi.TrProtocol.NugetBuilder\EnchCoreApi.TrProtocol.NugetBuilder.csproj", "{BFAA1648-3AB8-4DB6-80D6-7BEE7E8C6863}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.Test.Performance", "EnchCoreApi.TrProtocol.Test.Performance\EnchCoreApi.TrProtocol.Test.Performance.csproj", "{6412E684-41F7-4F1C-BAF5-9FB83BFF2B10}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnchCoreApi.TrProtocol.Test.Correctness", "EnchCoreApi.TrProtocol.Test.Correctness\EnchCoreApi.TrProtocol.Test.Correctness.csproj", "{95E8C00E-23C0-470F-8E8F-7A305AEF1779}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrRouter", "TrRouter\TrRouter.csproj", "{B3522745-23D5-4D33-B728-4632E977A081}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,10 +39,6 @@ Global
 		{A5C82068-CAC3-4AD0-91AF-39A06031981D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5C82068-CAC3-4AD0-91AF-39A06031981D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5C82068-CAC3-4AD0-91AF-39A06031981D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CEC2A08C-49AD-4CEB-BE97-323829F32ACD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CEC2A08C-49AD-4CEB-BE97-323829F32ACD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CEC2A08C-49AD-4CEB-BE97-323829F32ACD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CEC2A08C-49AD-4CEB-BE97-323829F32ACD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FE1818B0-E450-4E67-B057-31D9FB88544C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FE1818B0-E450-4E67-B057-31D9FB88544C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE1818B0-E450-4E67-B057-31D9FB88544C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -47,6 +47,18 @@ Global
 		{BFAA1648-3AB8-4DB6-80D6-7BEE7E8C6863}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BFAA1648-3AB8-4DB6-80D6-7BEE7E8C6863}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BFAA1648-3AB8-4DB6-80D6-7BEE7E8C6863}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6412E684-41F7-4F1C-BAF5-9FB83BFF2B10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6412E684-41F7-4F1C-BAF5-9FB83BFF2B10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6412E684-41F7-4F1C-BAF5-9FB83BFF2B10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6412E684-41F7-4F1C-BAF5-9FB83BFF2B10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95E8C00E-23C0-470F-8E8F-7A305AEF1779}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95E8C00E-23C0-470F-8E8F-7A305AEF1779}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95E8C00E-23C0-470F-8E8F-7A305AEF1779}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95E8C00E-23C0-470F-8E8F-7A305AEF1779}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3522745-23D5-4D33-B728-4632E977A081}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3522745-23D5-4D33-B728-4632E977A081}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3522745-23D5-4D33-B728-4632E977A081}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3522745-23D5-4D33-B728-4632E977A081}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
