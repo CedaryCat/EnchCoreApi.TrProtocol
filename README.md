@@ -3,11 +3,11 @@
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/EnchCoreApi.TrProtocol?label=EnchCoreApi.TrProtocol)](https://www.nuget.org/packages/EnchCoreApi.TrProtocol) 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) 
 ===
-### A efficient terraria packet serializer and partial protocol implement.
+### An efficient terraria packet serializer and partial protocol implement.
 ___
 * This project automatically builds efficient and unsafe working code through IIncrementalGenerator.<br>
 In addition, it provides an [additional patch for OTAPI](https://github.com/CedaryCat/EnchCoreApi.TrProtocol.OTAPI), by extracting some shared types to achieve friendly compatibility with OTAPI.<br>
-Therefore, by using this specially designed OTAPI,
+Therefore, by using this specially [designed OTAPI](https://www.nuget.org/packages/EnchCoreApi.TrProtocol.OTAPI) ,
 the data structures provided by the protocol library can be used directly in terraria's server programs.
 
 * This project is based on the protocol data structures from another project by [chi-rei-den](https://github.com/chi-rei-den).
@@ -19,9 +19,9 @@ appreciate their work and contribution. You can find their original project at [
 # Installation [![EnchCoreApi.TrProtocol](https://img.shields.io/nuget/vpre/EnchCoreApi.TrProtocol?label=EnchCoreApi.TrProtocol)](https://www.nuget.org/packages/EnchCoreApi.TrProtocol/)
 * You can find and install it in nuget package manager, or you can install it directly from the nuget command line
 ```
-PM> NuGet\Install-Package EnchCoreApi.TrProtocol -Version 1.0.2-beta1
+PM> NuGet\Install-Package EnchCoreApi.TrProtocol -Version 1.0.3
 ```
-* Please use version 1.0.2-beta1 because 1.0.2-alpha1 or earlier version may resolves a bug that caused some fields to be serialized incorrectly due to missing conditionals.
+* Please use version 1.0.2-beta1 or later version because 1.0.2-alpha1 or earlier version may resolves a bug that caused some fields to be serialized incorrectly due to missing conditionals.
 # Usage
 To use EnchCoreApi.TrProtocol, you need to add a reference to the namespace EnchCoreApi.TrProtocol, EnchCoreApi.TrProtocol.NetPackets, EnchCoreApi.TrProtocol.Models .etc 
 ```csharp
@@ -134,14 +134,14 @@ public partial class CombatTextInt : NetPacket {
 </table>
 
 ## **Note**
-### Serizialize
+### Serialize
 
 * Under normal circumstances, the protocol library does not need to know the packet header in serialization. 
 Therefore, when using **'NetPacket.WriteContent (ref void\*)'**, the user only needs to pass in the pointer to the binary data that represents Type. 
 This is the pointer at index=2 in the diagram table. 
 The protocol library then writes the content of the packet to the pointer position and adds the offset that was written back to the ref void* pointer.
 * So if you want to send a complete packet, your code should probarbly be written like this: [click here](#S2C_CombatTextInt)
-### Deseriziable
+### Deserialize
 * In deserialization, however, there is a notable problem. In Terraria, some packets need to be resolved based on the state of the game, 
 such as the **'NetCreativePowersModule'** packet. This packet is used to synchronize the creative powers of the players in the game. In Terraria 
 server, it calls the function **'APerPlayerTogglePower.Deserialize_SyncEveryone'**, which has the following code:
@@ -195,18 +195,86 @@ fixed (void* ptr = SendBuffer) {
     var ptr_current = Unsafe.Add<short>(ptr, 1); 
     //write packet
     packet.WriteContent(ref ptr_current); 
-    //get the packet content size
+    //get the packet total size (including 2 bytes of packet header)
     var size_short = (short)((long)ptr_current - (long)ptr); 
-
-    //add packet header size to total size
-    size_short += 2; 
-    //write packet header value (total size)
+    //write packet header value
     Unsafe.Write(ptr, size_short); 
 
     //send packet bytes
     socket.AsyncSend(SendBuffer, 0, size_short, delegate { }); 
 }
 ```
+# Profermance [![GitHub Workflow](https://img.shields.io/badge/Source-Github-d021d6?style=flat&logo=GitHub)](https://github.com/CedaryCat/EnchCoreApi.TrProtocol/blob/master/src/EnchCoreApi.TrProtocol.Test.Performance/PacketPerformanceTest.cs) 
+## Take the packet **WorldData (ID=7)** as an example
+* **Note:** skip offset0 because you already know what kind of package it is.
+### Serialize 
+```
+[Benchmark] public unsafe void Test_Unsafe() {
+    fixed (void* ptr = buffer) {
+        var p = Unsafe.Add<byte>(ptr, 1); // skip offset0
+        worldData.ReadContent(ref p);
+    }
+}
+```
+```
+[Benchmark] public void Test_BinaryWriter() {
+    var bw = new BinaryWriter(new MemoryStream(buffer));
+    bw.BaseStream.Position = 1; // skip offset0
+    bw.Write(worldData.Time);
+    //...
+}
+```
+```
+[Benchmark] public void Test_ReuseBinaryWriter() {
+    bw.BaseStream.Position = 1; // skip offset0
+    bw.Write(worldData.Time);
+    //...
+}
+```
+* **Result**
+
+|                 Method |      Mean |    Error |   StdDev | Rank |   Gen0 | Allocated |
+|----------------------- |:----------:|:---------:|:---------:|:-----:|:-------:|:----------:|
+|            Test_Unsafe |  95.44 ns | 0.362 ns | 0.321 ns |    1 | 0.0086 |      72 B |
+|      Test_BinaryWriter | 339.91 ns | 0.863 ns | 0.720 ns |    3 | 0.0124 |     104 B |
+| Test_ReuseBinaryWriter | 326.54 ns | 0.950 ns | 0.742 ns |    2 |      - |         - |
+
+---
+### Deserialize
+```
+[Benchmark] public unsafe void Test_Unsafe() {
+    fixed (void* ptr = buffer) {
+        var p = Unsafe.Add<byte>(ptr, 1); // skip offset0
+        worldData.ReadContent(ref p);
+    }
+}
+```
+```
+[Benchmark] public void Test_BinaryReader() {
+    var br = new BinaryReader(new MemoryStream(buffer));
+    br.BaseStream.Position = 1; // skip offset0
+    worldData.Time = br.ReadInt32();
+    //...
+}
+```
+```
+[Benchmark] public void Test_ReuseBinaryReader() {
+    br.BaseStream.Position = 1; // skip offset0
+    worldData.Time = br.ReadInt32();
+    //...
+}
+```
+* **Result**
+
+|                 Method |      Mean |    Error |   StdDev | Rank |   Gen0 | Allocated |
+|----------------------- |:----------:|:---------:|:---------:|:-----:|:-------:|:----------:|
+|            Test_Unsafe |  95.78 ns | 0.713 ns | 0.667 ns |    1 | 0.0086 |      72 B |
+|      Test_BinaryReader | 313.89 ns | 6.125 ns | 8.587 ns |    3 | 0.0877 |     736 B |
+| Test_ReuseBinaryReader | 229.80 ns | 0.564 ns | 0.500 ns |    2 | 0.0086 |      72 B |
+
+---
+## The others
+* The performance of string serialization/deserialization has been improved by about 20%. Due to space constraints, I will not discuss the details here. If you are interested, you can visit [this link](https://github.com/CedaryCat/EnchCoreApi.TrProtocol/blob/master/src/EnchCoreApi.TrProtocol.Test.Performance/StringPerformanceTest.cs) to see more.
 
 # RoadMap
 ### Planned feature
@@ -217,4 +285,9 @@ However, this will change the order of the arguments, since the parameters with 
 To maintain backward compatibility with older versions of the API, we will generate a new constructor overload with the adjusted parameter order 
 and keep the old constructor as well.
 ---
+* [ ] **XML annotation for construction**
+    * We plan to add an XML annotation to the constructor of each packet that receives the initialization content from the pointer. 
+This annotation will remind the user how to use it correctly. Such constructors are usually used by the protocol library, 
+and they should not be used by the user unless they know exactly what they are doing. Otherwise, the user should use another method of reading the packet from the pointer, 
+such as **'NetPacket.ReadNetPacket'**.
 

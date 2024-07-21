@@ -97,7 +97,7 @@ namespace TrClient {
                     var packetLen = Unsafe.Read<short>(readPtr);
                     readPtr = Unsafe.Add<byte>(readPtr, 2);
 
-                    array[arrayIndex] = NetPacket.ReadNetPacket(ref readPtr, packetLen - 2, false);
+                    array[arrayIndex] = NetPacket.ReadNetPacket(ref readPtr, Unsafe.Add<byte>(readPtrOld, packetLen), false);
                     int sizeReaded = (int)((long)readPtr - (long)readPtrOld);
 
                     if (sizeReaded != packetLen) {

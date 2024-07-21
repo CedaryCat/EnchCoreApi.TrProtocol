@@ -52,7 +52,7 @@ namespace EnchCoreApi.TrProtocol.Test
             fixed (void* ptr = NetCreativePowersModuleData)
             {
                 var p = ptr;
-                power = (NetCreativePowersModule)NetPacket.ReadNetPacket(ref p, 1 + 2 + 2 + 5, true);
+                power = (NetCreativePowersModule)NetPacket.ReadNetPacket(ref p, Unsafe.Add<byte>(ptr, 1 + 2 + 2 + 5), true);
             }
 
             Assert.AreEqual(power.ExtraData.Length, 5);

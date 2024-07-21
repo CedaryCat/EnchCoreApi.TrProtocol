@@ -467,7 +467,7 @@ namespace EnchCoreApi.TrProtocol {
             }
         }
         public unsafe static void WriteCompressedData(void* source, ref void* destination, int rawDataLength, CompressionLevel level) {
-            using var st = new UnmanagedMemoryStream((byte*)destination, 1024 * 32, 1024 * 32, FileAccess.Write);
+            using var st = new UnmanagedMemoryStream((byte*)destination, 1024 * 64, 1024 * 64, FileAccess.Write);
             using (var dst = new DeflateStream(st, level, true)) {
                 dst.Write(new Span<byte>(source, rawDataLength));
             }
