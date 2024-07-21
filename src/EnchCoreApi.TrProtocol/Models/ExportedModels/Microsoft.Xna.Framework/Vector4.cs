@@ -4,7 +4,7 @@ using EnchCoreApi.TrProtocol.Interfaces;
 namespace Microsoft.Xna.Framework;
 
 [TypeMigrationTarget]
-public struct Vector4 : ISoildSerializableData, ISequentialSerializableData<Vector4> {
+public struct Vector4 : ISoildSerializableData {
     public Vector4 SequentialData {
         get => this;
         set => this = value;

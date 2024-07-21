@@ -5,9 +5,9 @@ using Microsoft.Xna.Framework;
 namespace Terraria.DataStructures;
 [TypeMigrationTarget]
 public struct Point16 : ISoildSerializableData {
-    public readonly short X;
+    public short X;
 
-    public readonly short Y;
+    public short Y;
 
     public static Point16 Zero = new Point16(0, 0);
 

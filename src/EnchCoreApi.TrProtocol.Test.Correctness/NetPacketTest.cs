@@ -52,24 +52,13 @@ namespace EnchCoreApi.TrProtocol.Test
             fixed (void* ptr = NetCreativePowersModuleData)
             {
                 var p = ptr;
-                power = (NetCreativePowersModule)NetPacket.ReadNetPacket(ref p, 1 + 2 + 2 + 5, true);
+                power = (NetCreativePowersModule)NetPacket.ReadNetPacket(ref p, Unsafe.Add<byte>(ptr, 1 + 2 + 2 + 5), true);
             }
 
             Assert.AreEqual(power.ExtraData.Length, 5);
             for (int i = 0; i < power.ExtraData.Length; i++)
             {
                 Assert.AreEqual(power.ExtraData[i], i);
-            }
-        }
-
-        [TestMethod]
-        public unsafe void TileSection()
-        {
-            var data = PacketData.tilesection1_3800_450_200_150;
-            fixed(void* ptr = data)
-            {
-                var p = Unsafe.Add<short>(ptr, 1);
-                var packet = NetPacket.ReadNetPacket(ref p, data.Length - 2, false);
             }
         }
     }

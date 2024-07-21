@@ -477,9 +477,12 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                     {
                                         List<MemberDataAccessRound> defaults = new(packet.Members.Count);
                                         var initMembers = packet.Members.Where(m => !m.Attributes.Any(a => a.AttributeMatch<InitNullableAttribute>())).ToArray();
+                                        int shouldCreateNewConstructor = -1;
                                         var parameters = initMembers.Select(m => {
-                                            if (m.Attributes.Any(a => a.AttributeMatch<InitDefaultValueAttribute>()))
-                                            {
+                                            if (m.Attributes.Any(a => a.AttributeMatch<InitDefaultValueAttribute>())) {
+                                                if (shouldCreateNewConstructor == -1) {
+                                                    shouldCreateNewConstructor = 0;
+                                                }
                                                 if (m.IsNullable)
                                                 {
                                                     defaults.Add(m);
@@ -491,30 +494,44 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                     return null;
                                                 }
                                             }
+                                            if(shouldCreateNewConstructor == 0) {
+                                                shouldCreateNewConstructor = 1;
+                                            }
                                             return $"{m.MemberType} _{m.MemberName}";
                                         }).Where(s => s is not null).ToList();
-                                        if (packet.HasExtraData)
-                                        {
-                                            parameters.Add($"byte[] _{nameof(IExtraData.ExtraData)}");
+
+                                        var parameters_extra = new List<string>();
+                                        if (packet.HasExtraData) {
+                                            parameters_extra.Add($"byte[] _{nameof(IExtraData.ExtraData)}");
                                         }
-                                        if (packet.SideDependent)
-                                        {
-                                            parameters.Add($"bool _{nameof(ISideDependent.IsServerSide)}");
+                                        if (packet.SideDependent) {
+                                            parameters_extra.Add($"bool _{nameof(ISideDependent.IsServerSide)}");
                                         }
                                         var parameters_defaults = defaults.Select(m => $"{m.MemberType} _{m.MemberName} = default").ToList();
 
-                                        source.Write($"public {packet.TypeName}({string.Join(", ", parameters.Concat(parameters_defaults))}) ");
+                                        if (shouldCreateNewConstructor == 1 || (parameters_defaults.Count > 0 && (packet.HasExtraData || packet.SideDependent))) {
+                                            source.Write($"public {packet.TypeName}({string.Join(", ", initMembers.Select(m => $"{m.MemberType} _{m.MemberName}").Concat(parameters_extra))}) ");
+                                            source.BlockWrite((source) => {
+                                                if (packet.SideDependent) {
+                                                    source.WriteLine($"this.{nameof(ISideDependent.IsServerSide)} = _{nameof(ISideDependent.IsServerSide)};");
+                                                }
+                                                foreach (var m in initMembers) {
+                                                    source.WriteLine($"this.{m.MemberName} = _{m.MemberName};");
+                                                }
+                                                if (packet.HasExtraData) {
+                                                    source.WriteLine($"this.{nameof(IExtraData.ExtraData)} = _{nameof(IExtraData.ExtraData)};");
+                                                }
+                                            });
+                                        }
+                                        source.Write($"public {packet.TypeName}({string.Join(", ", parameters.Concat(parameters_extra).Concat(parameters_defaults))}) ");
                                         source.BlockWrite((source) => {
-                                            if (packet.SideDependent)
-                                            {
+                                            if (packet.SideDependent) {
                                                 source.WriteLine($"this.{nameof(ISideDependent.IsServerSide)} = _{nameof(ISideDependent.IsServerSide)};");
                                             }
-                                            foreach (var m in initMembers)
-                                            {
+                                            foreach (var m in initMembers) {
                                                 source.WriteLine($"this.{m.MemberName} = _{m.MemberName};");
                                             }
-                                            if (packet.HasExtraData)
-                                            {
+                                            if (packet.HasExtraData) {
                                                 source.WriteLine($"this.{nameof(IExtraData.ExtraData)} = _{nameof(IExtraData.ExtraData)};");
                                             }
                                         });
@@ -1037,8 +1054,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                             mTypeStr = mType.ToString();
                                                             memberAccess = $"{memberAccess}[{string.Join(",", m.IndexNames)}]";
                                                         }
-                                                        if (m.IsEnumRound)
-                                                        {
+                                                        if (m.IsEnumRound) {
                                                             mTypeStr = m.EnumType.underlyingType.GetPredifinedName();
                                                         }
 
@@ -1295,8 +1311,7 @@ namespace EnchCoreApi.TrProtocol.SerializeCodeGenerator {
                                                                         if (memberTypeSym is INamedTypeSymbol namedSym)
                                                                         {
 
-                                                                            if (Compilation.TryGetTypeDefSyntax(mTypeStr, out var tdef, fullNamespace, usings) && tdef is not null)
-                                                                            {
+                                                                            if (Compilation.TryGetTypeDefSyntax(mTypeStr, out var tdef, fullNamespace, usings) && tdef is not null) {
                                                                                 varName = $"gen_var_{parant_var}_{m.MemberName}";
                                                                                 source.WriteLine($"{mTypeStr} {varName} = {memberAccess};");
                                                                                 UnfoldMembers_Seri(namedSym, Transform(tdef).Members.Select<MemberDataAccessRound, (MemberDataAccessRound, string?)>(m => (m, varName)));

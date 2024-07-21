@@ -7,7 +7,6 @@ namespace EnchCoreApi.TrProtocol.Interfaces
     public interface ILengthDependent
     {
         unsafe void ReadContent(ref void* ptr, void* end_ptr);
-        unsafe void ReadContent(ref void* ptr, int restContentLen);
         unsafe void WriteContent(ref void* ptr);
     }
 }

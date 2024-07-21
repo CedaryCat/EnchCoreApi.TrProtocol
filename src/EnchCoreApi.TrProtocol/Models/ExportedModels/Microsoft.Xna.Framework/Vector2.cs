@@ -4,11 +4,7 @@ using System.Globalization;
 
 namespace Microsoft.Xna.Framework {
     [TypeMigrationTarget]
-    public struct Vector2 : ISoildSerializableData, ISequentialSerializableData<Vector2> {
-        public Vector2 SequentialData {
-            get => this;
-            set => this = value;
-        }
+    public struct Vector2 : ISoildSerializableData {
 
         public static Vector2[] Array = System.Array.Empty<Vector2>();
 

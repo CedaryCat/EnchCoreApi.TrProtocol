@@ -13,6 +13,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\C2SOnlyAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\CompressAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\ConditionArrayAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\ExternalMemberAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\ExternalMemberValueSetterAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\InitDefaultValueAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\InitNullableAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\S2COnlyAttribute.cs" />

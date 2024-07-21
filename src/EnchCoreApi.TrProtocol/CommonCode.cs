@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿using System;
+using System.Buffers;
 using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -12,23 +13,19 @@ namespace EnchCoreApi.TrProtocol {
         static CommonCode() {
             FastAllocateString = (delegate*<int, string>)typeof(string).GetRuntimeMethods().First(m => m.Name == "FastAllocateString").MethodHandle.GetFunctionPointer();
         }
-
         #region String
-        public unsafe static string ReadString(Span<byte> buffer, ref int index) {
-            fixed (byte* ptr = buffer) {
-                using var s = new UnmanagedMemoryStream(ptr, buffer.Length - index);
-                index += (int)s.Position;
-                using var r = new BinaryReader(s);
-                return r.ReadString();
-            }
+        public unsafe static string ReadString(ref void* ptr) {
+            using var s = new UnmanagedMemoryStream((byte*)ptr, 1024 * 1024, 1024 * 1024, access: FileAccess.Read);
+            using var r = new BinaryReader(s);
+            string str = r.ReadString();
+            ptr = Unsafe.Add<byte>(ptr, (int)s.Position);
+            return str;
         }
-        public unsafe static void WriteString(Span<byte> buffer, ref int index, ref string str) {
-            fixed (byte* ptr = buffer) {
-                using var s = new UnmanagedMemoryStream(ptr, buffer.Length - index);
-                using var w = new BinaryWriter(s);
-                w.Write(str);
-                index += (int)s.Position;
-            }
+        public unsafe static void WriteString(ref void* ptr, string str) {
+            using var s = new UnmanagedMemoryStream((byte*)ptr, 1024 * 1024, 1024 * 1024, FileAccess.Write);
+            using var w = new BinaryWriter(s);
+            w.Write(str);
+            ptr = Unsafe.Add<byte>(ptr, (int)s.Position);
         }
         public unsafe static string ReadString(ref void* ptr, int len) {
             using var s = new UnmanagedMemoryStream((byte*)ptr, len);
@@ -120,7 +117,7 @@ namespace EnchCoreApi.TrProtocol {
             //return str;
             return charBuffer;
         }
-        public unsafe static string ReadString(ref void* ptr) {
+        public unsafe static string ReadString_1(ref void* ptr) {
             int Len = 0;
             var ptr_current = ptr;
             uint stringByteLen_Uint = 0;
@@ -351,7 +348,7 @@ namespace EnchCoreApi.TrProtocol {
             //return str;
             return str;
         }
-        public unsafe static void WriteString(ref void* ptr, string value) {
+        public unsafe static void WriteString_1(ref void* ptr, string value) {
             if (value.Length == 0)
             {
                 Unsafe.Write(ptr, (byte)0);
@@ -470,7 +467,7 @@ namespace EnchCoreApi.TrProtocol {
             }
         }
         public unsafe static void WriteCompressedData(void* source, ref void* destination, int rawDataLength, CompressionLevel level) {
-            using var st = new UnmanagedMemoryStream((byte*)destination, 1024 * 32, 1024 * 32, FileAccess.Write);
+            using var st = new UnmanagedMemoryStream((byte*)destination, 1024 * 64, 1024 * 64, FileAccess.Write);
             using (var dst = new DeflateStream(st, level, true)) {
                 dst.Write(new Span<byte>(source, rawDataLength));
             }

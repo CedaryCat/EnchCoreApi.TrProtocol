@@ -196,7 +196,7 @@ namespace TrRouter
                         var packetHeader = Unsafe.Read<short>(readPtr);
                         readPtr = Unsafe.Add<short>(readPtr, 1);
 
-                        var packet = NetPacket.ReadNetPacket(ref readPtr, packetHeader - 2, isServerSize);
+                        var packet = NetPacket.ReadNetPacket(ref readPtr, Unsafe.Add<byte>(readPtrOld, packetHeader), isServerSize);
                         int sizeReaded = (int)((long)readPtr - (long)readPtrOld);
                         array[arrayIndex] = (packet, packetHeader);
 

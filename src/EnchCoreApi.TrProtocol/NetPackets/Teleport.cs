@@ -9,6 +9,7 @@ public partial class Teleport : NetPacket, IPlayerSlot {
     public sealed override MessageID Type => MessageID.Teleport;
     public BitsByte Bit1;
     public byte PlayerSlot { get; set; }
+    [InitNullable]
     public byte HighBitOfPlayerIsAlwaysZero = 0;
     public Vector2 Position;
     public byte Style;
