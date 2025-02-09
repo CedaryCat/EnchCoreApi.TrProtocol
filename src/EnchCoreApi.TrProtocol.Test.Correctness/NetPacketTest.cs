@@ -69,7 +69,7 @@ namespace EnchCoreApi.TrProtocol.Test
             fixed(void* ptr = data)
             {
                 var p = Unsafe.Add<short>(ptr, 1);
-                var packet = NetPacket.ReadNetPacket(ref p, data.Length - 2, false);
+                var packet = NetPacket.ReadNetPacket(ref p, Unsafe.Add<byte>(ptr, data.Length), false);
             }
         }
     }

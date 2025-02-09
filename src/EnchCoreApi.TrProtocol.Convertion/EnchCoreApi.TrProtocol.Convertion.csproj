@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-	<VersionPrefix>1.0.1</VersionPrefix>
+	<VersionPrefix>1.1.0</VersionPrefix>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="OTAPI.Upcoming" Version="3.1.20" />
+    <PackageReference Include="OTAPI.Upcoming" Version="3.2.4" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EnchCoreApi.TrProtocol\EnchCoreApi.TrProtocol.csproj" />
