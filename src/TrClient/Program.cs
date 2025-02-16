@@ -11,27 +11,22 @@ namespace TrClient {
     {
         static string?[] names = new string?[byte.MaxValue + 1];
         static WorldData worldData = new WorldData(1000, 1000, 1000, 1000, "aaa", Array.Empty<byte>());
-
         static void Main(string[] args) {
-            var ip = "127.0.0.1";
-            ushort port = 7777;
+            var param = new Parameters(args);
 
-            const int numInGroup = 30;
-            byte g;
-            do {
-                Console.WriteLine("输入组编");
-            }
-            while (!byte.TryParse(Console.ReadLine(), out g));
+            int numInGroup = param.NumInGroup;
+            int groupIndex = param.GroupIndex;
+            string ip = param.IP;
+            ushort port = param.Port;
+            string target = param.SimulateTarget;
 
             TrClient[] clients = new TrClient[numInGroup];
             DateTime[] schedule = new DateTime[numInGroup];
 
             for (int i = 0; i < numInGroup; i++) {
-                clients[i] = SetupClient(ip, port, i, g * numInGroup + i);
-                schedule[i] = DateTime.Now + TimeSpan.FromSeconds(1 * i);
+                clients[i] = SetupClient(groupIndex * numInGroup + i, target);
+                schedule[i] = DateTime.Now + TimeSpan.FromSeconds(0.3333 * i);
             }
-
-            Random rand = new();
 
             while (true) {
                 for (int i = 0; i < numInGroup; i++) {
@@ -42,47 +37,45 @@ namespace TrClient {
                     }
 
                     try {
-                        client.ProcessPackets();
+                        client.ProcessClientLogic();
 
-                        if (client.IsSpawned && rand.Next(30) == 0) {
-                            var pos = new Vector2(worldData.SpawnX * 16 + 8, worldData.SpawnY * 16 - 48);
-                            if (client.updatePos != default) {
-                                pos = client.updatePos + new Vector2(8, 0); ;
-                            }
-                            if (client.updateCtrl != default) {
-                                pos = client.updateCtrl.Position + new Vector2(8, 0);
-                            }
-                            client.Send(new SyncProjectile(
-                                (short)rand.Next(1000),
-                                pos,
-                                new Vector2(rand.Next(-5, 5), -5),
-                                0,
-                                931,
-                                new Terraria.BitsByte(false, false, false, false, true, true, false, false),
-                                default,
-                                default,
-                                default,
-                                default,
-                                50,
-                                1,
-                                0,
-                                0,
-                                0));
-                        }
+                        //if (client.IsSpawned && rand.Next(30) == 0) {
+                        //    var pos = new Vector2(worldData.SpawnX * 16 + 8, worldData.SpawnY * 16 - 48);
+                        //    if (client.updatePos != default) {
+                        //        pos = client.updatePos + new Vector2(8, 0); ;
+                        //    }
+                        //    if (client.updateCtrl != default) {
+                        //        pos = client.updateCtrl.Position + new Vector2(8, 0);
+                        //    }
+                        //    client.Send(new SyncProjectile(
+                        //        (short)rand.Next(1000),
+                        //        pos,
+                        //        new Vector2(rand.Next(-5, 5), -5),
+                        //        0,
+                        //        931,
+                        //        new Terraria.BitsByte(false, false, false, false, true, true, false, false),
+                        //        default,
+                        //        default,
+                        //        default,
+                        //        default,
+                        //        50,
+                        //        1,
+                        //        0,
+                        //        0,
+                        //        0));
+                        //}
                     }
                     catch { 
                         client.connected = false;
                     }
                 }
-                Thread.Sleep(5);
+                Thread.Sleep(15);
             }
         }
-        static TrClient SetupClient(string ip, ushort port, int sleepIndex, int i) {
+        static TrClient SetupClient(int i, string target) {
             var client = new TrClient(false, Guid.Empty.ToString());
             var rand = new Random(i * DateTime.Now.Ticks.GetHashCode());
             client.Username = "test" + i;
-
-            string target = "Melvin";
 
             client.OnChat += (o, t, c) => Console.WriteLine(t);
             client.OnMessage += (o, t) => Console.WriteLine(t);

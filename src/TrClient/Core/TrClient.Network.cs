@@ -5,100 +5,119 @@ using System.Runtime.CompilerServices;
 using EnchCoreApi.TrProtocol.Models;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
+using TrClient.Core;
+using System.Threading.Channels;
+using System.Runtime.InteropServices;
 
 namespace TrClient
 {
-	unsafe partial class TrClient
-	{
-		public void Connect(string hostname, int port) {
-			client = new TcpClient() { 
+	partial class TrClient
+    {
+        private CachedSingleThreadSendSocket socket;
+        static ConcurrentCollection<TrClient> runningClients = new ConcurrentCollection<TrClient>();
+        readonly int id = instanceCount++;
+        static int instanceCount = 0;
+        public void Connect(string hostname, int port) {
+            var client = new TcpClient() { 
 				NoDelay = true
 			};
 			client.Connect(hostname, port);
-			netStream = client.GetStream();
-			connected = true;
+            socket = new CachedSingleThreadSendSocket(client);
+            connected = true;
 
-			NetThread();
-		}
-		protected ConcurrentQueue<NetPacket> recievedPkg = new ConcurrentQueue<NetPacket>();
-		protected AutoResetEvent recievedSignal = new AutoResetEvent(false);
-		void Receive_all() {
-			var totalLen = netStream.Read(readBuffer, 0, 1024 * 32);
-			fixed (void* ptr = readBuffer) {
-				var readPtr = ptr;
-				while (totalLen > 0) {
-					var readPtrOld = readPtr;
+            runningClients.TryAdd(id, this);
+        }
+        static TrClient() {
+            RecieveThread();
+        }
+        static void RecieveThread() {
+            Task.Run(async () => {
+                Thread.CurrentThread.Name = "RecievePacketThread";
+                while (true) {
+                    foreach (var client in runningClients) {
+                        try {
+                            if (Interlocked.CompareExchange(ref client.completedReceive, 0, 1) == 1) {
+                                client.Receive();
+                            }
+                        }
+                        catch {
+                            runningClients.TryRemove(client.id);
+                        }
+                    }
+                    await Task.Delay(10);
+                }
+            });
+        }
 
-					var packetLen = Unsafe.Read<short>(readPtr);
-					readPtr = Unsafe.Add<byte>(readPtr, 2);
-					var pkgType = (MessageID)Unsafe.Read<byte>(readPtr);
+        volatile int completedReceive = 1;
+        readonly Channel<NetPacket> recievedPkts = Channel.CreateUnbounded<NetPacket>();
 
-					if (Read(pkgType, ref readPtr, Unsafe.Add<byte>(readPtrOld, packetLen), out var pkg)) {
-						recievedPkg.Enqueue(pkg);
+        async void Receive() {
 
-						int sizeReaded = (int)((long)readPtr - (long)readPtrOld);
+            var readed = await socket.AsyncReceive(readBuffer, lastStartPos, readBuffer.Length - lastStartPos);
+            if (readed >= 0) {
+                var totalLen = lastStartPos + readed;
+                lastStartPos = 0;
+                ProcessRecievedBytes(totalLen);
+            }
+            else {
+                runningClients.TryRemove(id);
+            }
 
-						if (sizeReaded != packetLen) {
-							throw new Exception($"warning: packet '{pkg.GetType().Name}' len '{packetLen}' but readed '{sizeReaded}'");
-						}
-					}
+            Interlocked.Exchange(ref completedReceive, 1);
+        }
 
-					totalLen -= packetLen;
-				}
-			}
-		}
-
-		int lastStartPos = 0;
-		void Receive_smart() {
-
-			var totalLen = lastStartPos + netStream.Read(readBuffer, lastStartPos, readBuffer.Length - lastStartPos);
-			lastStartPos = 0;
+        int lastStartPos = 0;
+		unsafe void ProcessRecievedBytes(int totalLen) {
 
             fixed (void* ptr = readBuffer) {
-				var readPtr = ptr;
-				while (totalLen > 0) {
-					var readPtrOld = readPtr;
+                var currentReadPtr = ptr;
+                while (totalLen > 0) {
+                    var beginReadPtr = currentReadPtr;
 
-					var packetLen = Unsafe.Read<short>(readPtr);
+                    var packetLen = Unsafe.Read<short>(currentReadPtr);
 
-					if (totalLen < packetLen) {
+                    if (totalLen < packetLen) {
                         for (int i = 0; i < totalLen; i++) {
-							readBuffer[i] = Unsafe.Read<byte>(Unsafe.Add<byte>(readPtr, i));
+                            readBuffer[i] = Unsafe.Read<byte>(Unsafe.Add<byte>(currentReadPtr, i));
                         }
-						lastStartPos = totalLen;
+                        lastStartPos = totalLen;
                         break;
                     }
 
-                    readPtr = Unsafe.Add<byte>(readPtr, 2);
+                    currentReadPtr = Unsafe.Add<byte>(currentReadPtr, 2);
 
-					bool shouldRead = false;
-					var pkgType = (MessageID)Unsafe.Read<byte>(readPtr);
-					if (pkgType != MessageID.NetModules) {
-						shouldRead = registeredMessages.Contains(pkgType);
-					}
-					else {
-						shouldRead = registeredModules.Contains((NetModuleType)Unsafe.Read<short>(Unsafe.Add<byte>(readPtr, 1)));
-					}
+                    bool shouldRead = false;
+                    var pkgType = (MessageID)Unsafe.Read<byte>(currentReadPtr);
+                    if (pkgType != MessageID.NetModules) {
+                        shouldRead = registeredMessages.Contains(pkgType);
+                    }
+                    else {
+                        shouldRead = registeredModules.Contains((NetModuleType)Unsafe.Read<short>(Unsafe.Add<byte>(currentReadPtr, 1)));
+                    }
 
-					if (shouldRead) {
-						if (Read(pkgType, ref readPtr, Unsafe.Add<byte>(readPtrOld, packetLen), out var pkg)) {
-							recievedPkg.Enqueue(pkg);
+                    if (shouldRead) {
+                        if (ReadPacket(pkgType, ref currentReadPtr, Unsafe.Add<byte>(beginReadPtr, packetLen), out var pkt)) {
+                            recievedPkts.Writer.TryWrite(pkt);
 
-							int sizeReaded = (int)((long)readPtr - (long)readPtrOld);
+                            int sizeReaded = (int)((long)currentReadPtr - (long)beginReadPtr);
 
-							if (sizeReaded != packetLen) {
-								throw new Exception($"warning: packet '{pkg.GetType().Name}' len '{packetLen}' but readed '{sizeReaded}'");
-							}
-						}
-					}
-					else {
-						readPtr = Unsafe.Add<byte>(readPtrOld, packetLen);
-					}
-					totalLen -= packetLen;
-				}
-			}
-		}
-        static unsafe bool Read(MessageID type, ref void* readPtr, void* endPtr, [NotNullWhen(true)] out NetPacket? packet) {
+                            // Console.WriteLine($"[{pkt.Type}]Len:{packetLen}, Read:{sizeReaded}");
+
+                            if (sizeReaded != packetLen) {
+                                throw new Exception($"warning: packet '{pkt.GetType().Name}' len '{packetLen}' but readed '{sizeReaded}'");
+                            }
+                        }
+                    }
+                    else {
+                        currentReadPtr = Unsafe.Add<byte>(beginReadPtr, packetLen);
+                    }
+                    totalLen -= packetLen;
+                }
+            }
+        }
+        static unsafe bool ReadPacket(MessageID type, ref void* readPtr, void* endPtr, [NotNullWhen(true)] out NetPacket? packet) {
 			try {
 				packet = NetPacket.ReadNetPacket(ref readPtr, endPtr, false);
 				return true;
@@ -114,48 +133,30 @@ namespace TrClient
 				return false;
 			}
 		}
-		readonly ConcurrentQueue<NetPacket> sendQueue = new ConcurrentQueue<NetPacket>();
-		readonly AutoResetEvent sendSignal = new AutoResetEvent(false);
-		public void Send(NetPacket packet) {
-			sendQueue.Enqueue(packet);
-			sendSignal.Set();
-		}
-		void NetThread() {
-			Task.Run(() => {
-				while (connected && netStream.CanRead) {
-					Receive_smart();
-					if (!recievedPkg.IsEmpty) {
-						recievedSignal.Set();
-					}
-				}
-			});
-			Task.Run(() => {
-				while (connected && netStream.CanWrite) {
-					while (sendQueue.TryDequeue(out var packet)) {
-						try {
-							if (packet is IPlayerSlot ips) ips.PlayerSlot = PlayerSlot;
+        public unsafe void Send(NetPacket packet) {
+            try {
+                if (packet is IPlayerSlot ips) ips.PlayerSlot = PlayerSlot;
 
-							fixed (void* sendBuffer = this.sendBuffer) {
-								var ptr = Unsafe.Add<byte>(sendBuffer, 2);
-								packet.WriteContent(ref ptr);
-								var size = (short)((long)ptr - (long)sendBuffer);
-								Unsafe.Write(sendBuffer, size);
+                var ptr_begin = (void*)Marshal.AllocHGlobal(1024 * 16);
 
-								var arr = new ReadOnlySpan<byte>(sendBuffer, size).ToArray();
-								netStream.BeginWrite(arr, 0, arr.Length, null, null);
+                var ptr = Unsafe.Add<byte>(ptr_begin, 2);
+                packet.WriteContent(ref ptr);
+                var size = (short)((long)ptr - (long)ptr_begin);
+                Unsafe.Write(ptr_begin, size);
 
-								if (Debug) {
-									Console.WriteLine($"[{packet.GetType().Name}]{string.Join(",", arr.Select(b => $"{b:x2}"))}");
-								}
-							}
-						}
-						finally {
+                var arr = new ReadOnlySpan<byte>(ptr_begin, size).ToArray();
 
-						}
-					}
-					sendSignal.WaitOne();
-				}
-			});
-		}
+                socket.AsyncSend(arr, 0, size);
+
+                Marshal.FreeHGlobal((nint)ptr_begin);
+
+                if (Debug) {
+                    Console.WriteLine($"{ToString()}[↑][{packet.GetType().Name}]{string.Join(",", arr.Select(b => $"{b:x2}"))}");
+                }
+            }
+            finally {
+
+            }
+        }
 	}
 }

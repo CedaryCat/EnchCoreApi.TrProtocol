@@ -21,7 +21,7 @@ namespace TrClient
             Task.Run(() => {
 
                 while (true) {
-                    ProcessPackets();
+                    ProcessClientLogic();
 
                     Thread.Sleep(8);
                 }

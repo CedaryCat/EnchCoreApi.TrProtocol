@@ -52,7 +52,7 @@ namespace EnchCoreApi.TrProtocol.NugetBuilder
 
             nuspec_xml = nuspec_xml.Replace("[INJECT_VERSION]", version);
 
-            var platforms = new[] { "net6.0" };
+            var platforms = new[] { "net9.0" };
             var xml_dependency = "";
             var xml_group = String.Join("", platforms.Select(platform => $"\n\t<group targetFramework=\"{platform}\">{xml_dependency}\n\t</group>"));
             var xml_dependencies = $"<dependencies>{xml_group}\n    </dependencies>";

@@ -1,36 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Sockets;
 using EnchCoreApi.TrProtocol;
 using EnchCoreApi.TrProtocol.NetPackets;
 using Microsoft.Xna.Framework;
 using Terraria.DataStructures;
 using Terraria;
-using EnchCoreApi.TrProtocol.Models.Interfaces;
 using EnchCoreApi.TrProtocol.NetPackets.Modules;
 using Terraria.Localization;
-using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
-using System.Buffers;
-using System.Collections;
-using System.Reflection.Metadata;
 using EnchCoreApi.TrProtocol.Models;
 using System.Reflection;
+using TrClient.Core;
+using System.Threading.Channels;
 
 namespace TrClient {
-    public unsafe partial class TrClient : IDisposable {
-        private TcpClient client;
+    public partial class TrClient : IDisposable {
 
         public byte PlayerSlot { get; private set; }
         public string CurRelease = "Terraria279";
         public string Username = "";
         public bool IsPlaying { get; private set; }
 
-        private NetworkStream netStream;
         private readonly byte[] readBuffer;
         private readonly byte[] sendBuffer;
         public bool Debug;
@@ -40,14 +28,17 @@ namespace TrClient {
             Debug = debug;
             this.uuid = uuid;
             password = serverPassword;
-            readBuffer = new byte[1024 * 521];
-            sendBuffer = new byte[1024 * 521];
+            readBuffer = new byte[1024 * 1024 * 8];
+            sendBuffer = new byte[1024 * 1024];
             InternalOn();
+            socket = null!;
         }
         public void Dispose() {
+            socket?.Close();
+            GC.SuppressFinalize(this);
         }
         public void KillServer() {
-            client.GetStream().Write(new byte[] { 0, 0 }, 0, 2);
+            socket.AsyncSend([0, 0], 0, 2);
         }
         public void Hello(string message) {
             Send(new ClientHello(message));
@@ -72,13 +63,13 @@ namespace TrClient {
             }, null, false));
         }
 
-        public event Action<TrClient, NetworkTextModel, Color> OnChat;
-        public event Action<TrClient, string> OnMessage;
+        public event Action<TrClient, NetworkTextModel, Color>? OnChat;
+        public event Action<TrClient, string>? OnMessage;
 
         private readonly Dictionary<Type, Action<NetPacket>> handlers = new();
         readonly HashSet<MessageID> registeredMessages = new();
         readonly HashSet<NetModuleType> registeredModules = new();
-        public void On<T>(Action<T> handler) where T : NetPacket {
+        public unsafe void On<T>(Action<T> handler) where T : NetPacket {
             void Handler(NetPacket p) => handler((T)p);
 
             if (handlers.TryGetValue(typeof(T), out var val))
@@ -140,22 +131,31 @@ namespace TrClient {
         public Vector2 updatePos;
         DateTime lastCtrlUpdate;
 
-        public void ProcessPackets() {
+
+        volatile byte completedProcessClientLogic = 1;
+        public void ProcessClientLogic() {
+            if (Interlocked.CompareExchange(ref completedProcessClientLogic, 0, 1) == 1) {
+                ProcessClientLogicInner();
+            }
+        }
+        private async void ProcessClientLogicInner() {
             if (!connected) {
+                Interlocked.Exchange(ref completedProcessClientLogic, 1);
                 return;
             }
 
             if (!SentHello) {
                 Hello(CurRelease);
+                SentHello = true;
             }
 
-            while (recievedPkg.TryDequeue(out var packet)) {
+            bool available = await recievedPkts.Reader.WaitToReadAsync();
+
+            while (recievedPkts.Reader.TryRead(out var packet)) {
                 try {
-                    if (Debug) Console.WriteLine(packet.GetType().Name);
+                    if (Debug) Console.WriteLine($"{ToString()}[↓]{packet.GetType().Name}");
 
                     if (handlers.TryGetValue(packet.GetType(), out var handler)) handler(packet);
-
-                    //else Console.WriteLine($"[Warning] not processed packet type {packet}");
                 }
                 catch {
 
@@ -177,6 +177,12 @@ namespace TrClient {
                 }
                 Send(ctrl);
             }
+
+            Interlocked.Exchange(ref completedProcessClientLogic, 1);
+        }
+
+        public override string ToString() {
+            return $"{new string(' ', id * 2)}[{Username}|i:{id}|s:{PlayerSlot}]";
         }
     }
 }
